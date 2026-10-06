@@ -31,3 +31,49 @@ def registro_cliente_view(request):
         form = RegistroClienteForm()
 
     return render(request, 'registro.html', {'form': form})
+
+#solicitud de cotizacion
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+from .forms import SolicitudCotizacionForm
+from .models import GestionEstadoCotizacion, EstadoCotizacion
+
+
+def solicitar_cotizacion(request):
+
+    if request.method == 'POST':
+
+        form = SolicitudCotizacionForm(
+            request.POST,
+            request.FILES
+        )
+
+        if form.is_valid():
+
+            solicitud = form.save()
+
+            GestionEstadoCotizacion.objects.create(
+                solicitud=solicitud,
+                estado=EstadoCotizacion.PENDIENTE,
+                observacion='Solicitud creada por el cliente.'
+            )
+
+            messages.success(
+                request,
+                'Su solicitud de cotización fue enviada correctamente.'
+            )
+
+            return redirect('main')
+
+    else:
+
+        form = SolicitudCotizacionForm()
+
+    return render(
+        request,
+        'main.html',
+        {
+            'form': form
+        }
+    )
