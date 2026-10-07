@@ -32,7 +32,6 @@ def registro_cliente_view(request):
 
     return render(request, 'registro.html', {'form': form})
 
-<<<<<<< HEAD
 # --- Función para generar PDF de Cotización [RF-28] ---
 import io
 from django.http import HttpResponse
@@ -56,50 +55,3 @@ def generar_cotizacion_pdf(request, cotizacion_id):
         return response
     
     return HttpResponse("Error al generar el PDF", status=500)
-=======
-#solicitud de cotizacion
-from django.shortcuts import render, redirect
-from django.contrib import messages
-
-from .forms import SolicitudCotizacionForm
-from .models import GestionEstadoCotizacion, EstadoCotizacion
-
-
-def solicitar_cotizacion(request):
-
-    if request.method == 'POST':
-
-        form = SolicitudCotizacionForm(
-            request.POST,
-            request.FILES
-        )
-
-        if form.is_valid():
-
-            solicitud = form.save()
-
-            GestionEstadoCotizacion.objects.create(
-                solicitud=solicitud,
-                estado=EstadoCotizacion.PENDIENTE,
-                observacion='Solicitud creada por el cliente.'
-            )
-
-            messages.success(
-                request,
-                'Su solicitud de cotización fue enviada correctamente.'
-            )
-
-            return redirect('main')
-
-    else:
-
-        form = SolicitudCotizacionForm()
-
-    return render(
-        request,
-        'main.html',
-        {
-            'form': form
-        }
-    )
->>>>>>> cacbb9d79ec980d125acf6fc30e6b596a8378325

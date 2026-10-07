@@ -525,3 +525,71 @@ class Contacto(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.asunto}"
+
+#modelo para solicitud de cotizacion
+
+# ============================================================
+# SOLICITUD DE COTIZACIÓN
+# ============================================================
+
+class SolicitudCotizacion(models.Model):
+
+    TIPOS_SOLICITUD = [
+        ("INSTALACION_ELECTRICA", "Instalación eléctrica"),
+        ("PANELES_FOTOVOLTAICOS", "Paneles fotovoltaicos"),
+        ("MANTENCION_REPARACION", "Mantención y reparación"),
+        ("OTRO", "Otro"),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+
+    nombre = models.CharField(
+        max_length=100
+    )
+
+    apellido = models.CharField(
+        max_length=100
+    )
+
+    correo = models.EmailField(
+        max_length=150
+    )
+
+    telefono = models.CharField(
+        max_length=30
+    )
+
+    tipo_solicitud = models.CharField(
+        max_length=50,
+        choices=TIPOS_SOLICITUD
+    )
+
+    descripcion = models.TextField()
+
+    ubicacion = models.CharField(
+        max_length=250
+    )
+
+    archivo = models.FileField(
+        upload_to="solicitudes_cotizacion/",
+        blank=True,
+        null=True
+    )
+
+    observaciones = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = "solicitud_cotizacion"
+        verbose_name = "Solicitud de cotización"
+        verbose_name_plural = "Solicitudes de cotización"
+        ordering = ["-fecha_creacion"]
+
+    def __str__(self):
+        return f"Solicitud #{self.id} - {self.nombre} {self.apellido}"

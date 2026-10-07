@@ -14,11 +14,10 @@ class EstadoCotizacion(models.TextChoices):
 
 class GestionEstadoCotizacion(models.Model):
     solicitud = models.ForeignKey(
-        'SolicitudCotizacion',
+        'mainPage.SolicitudCotizacion',
         on_delete=models.CASCADE,
         related_name='gestion_estados'
     )
-
     estado = models.CharField(
         max_length=20,
         choices=EstadoCotizacion.choices,
