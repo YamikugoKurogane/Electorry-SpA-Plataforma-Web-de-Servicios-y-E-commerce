@@ -1,4 +1,8 @@
+from django.shortcuts import render
 
+
+def homeAdmin(request):
+    return render(request, "indexAdmin.html")
 
 #views para estados de cotizacion
 
@@ -9,9 +13,9 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 
-from .models import SolicitudCotizacion
 from .services import cambiar_estado_cotizacion
-
+from mainPage.models import SolicitudCotizacion
+from .models import GestionEstadoCotizacion
 
 @login_required
 @require_POST
@@ -91,7 +95,7 @@ def cambiar_estado_solicitud(request, solicitud_id):
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 
-from .models import SolicitudCotizacion
+
 from .services import (
     obtener_estado_cotizacion,
     obtener_estado_cotizacion_display,

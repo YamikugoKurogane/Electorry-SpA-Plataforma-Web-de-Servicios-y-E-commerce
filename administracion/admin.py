@@ -1,9 +1,7 @@
 from django.contrib import admin
 
-from .models import (
-    SolicitudCotizacion,
-    GestionEstadoCotizacion
-)
+from mainPage.models import SolicitudCotizacion
+from .models import GestionEstadoCotizacion
 
 
 @admin.register(SolicitudCotizacion)
@@ -16,6 +14,7 @@ class SolicitudCotizacionAdmin(admin.ModelAdmin):
         'correo',
         'tipo_solicitud',
         'estado_actual_display',
+        'fecha_creacion',
     )
 
     search_fields = (
@@ -27,7 +26,20 @@ class SolicitudCotizacionAdmin(admin.ModelAdmin):
 
     list_filter = (
         'tipo_solicitud',
+        'fecha_creacion',
     )
+
+    @admin.display(description='Estado actual')
+    def estado_actual_display(self, obj):
+        ultima_gestion = (
+            GestionEstadoCotizacion.objects
+            .filter(solicitud=obj)
+            .order_by('-fecha_cambio', '-id')
+            .first()
+        )
+        if ultima_gestion is None:
+            return 'Sin gestión'
+        return ultima_gestion.estado
 
 
 @admin.register(GestionEstadoCotizacion)

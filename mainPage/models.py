@@ -534,6 +534,14 @@ class Contacto(models.Model):
 
 class SolicitudCotizacion(models.Model):
 
+    ESTADOS = [
+        ("PENDIENTE", "Pendiente"),
+        ("EN_REVISION", "En revisión"),
+        ("COTIZADA", "Cotizada"),
+        ("RECHAZADA", "Rechazada"),
+        ]
+
+
     TIPOS_SOLICITUD = [
         ("INSTALACION_ELECTRICA", "Instalación eléctrica"),
         ("PANELES_FOTOVOLTAICOS", "Paneles fotovoltaicos"),
@@ -583,6 +591,12 @@ class SolicitudCotizacion(models.Model):
 
     fecha_creacion = models.DateTimeField(
         auto_now_add=True
+    )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default="PENDIENTE"
     )
 
     class Meta:

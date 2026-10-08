@@ -1,9 +1,11 @@
 from django.urls import path
 
+from .views import *
 from . import views
 
 
 urlpatterns = [
+    path("", views.homeAdmin, name="AdminHome"),
     path(
         'solicitudes/<int:solicitud_id>/estado/',
         views.cambiar_estado_solicitud,

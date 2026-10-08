@@ -3,6 +3,7 @@
 from django.db import models
 
 
+
 class EstadoCotizacion(models.TextChoices):
     PENDIENTE = 'PENDIENTE', 'Pendiente'
     EN_REVISION = 'EN_REVISION', 'En revisión'

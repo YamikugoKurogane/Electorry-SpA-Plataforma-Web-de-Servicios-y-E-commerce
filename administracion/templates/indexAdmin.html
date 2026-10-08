@@ -1,0 +1,187 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'stile.css' %}">
+    <title>Administración | Electorry SPA</title>
+
+
+</head>
+
+<body>
+
+    <!-- =====================================================
+         PANEL ADMINISTRATIVO
+         App: admin
+         Área: Administración
+         ===================================================== -->
+
+    <header class="admin-header">
+
+        <div class="admin-header-container">
+
+            <div class="admin-logo">
+                <h1>Electorry <span>SPA</span></h1>
+                <p>Panel de Administración</p>
+            </div>
+
+            <nav class="admin-navbar">
+
+                <a href="#inicio">Inicio</a>
+                <a href="#cotizaciones">Cotizaciones</a>
+                <a href="#productos">Productos</a>
+                <a href="#servicios">Servicios</a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <!-- =================================================
+             INICIO
+             ================================================= -->
+
+        <section id="inicio" class="admin-hero">
+
+            <div class="admin-container">
+
+                <h2>Panel de Administración</h2>
+
+                <p>
+                    Gestiona las solicitudes de cotización,
+                    productos y servicios de Electorry SPA.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             OPCIONES ADMINISTRATIVAS
+             ================================================= -->
+
+        <section class="admin-dashboard">
+
+            <div class="admin-container">
+
+                <div class="section-title">
+
+                    <h2>Gestión del sistema</h2>
+
+                    <p>
+                        Selecciona el área que deseas administrar.
+                    </p>
+
+                </div>
+
+
+                <div class="admin-grid">
+
+
+                    <!-- COTIZACIONES -->
+
+                    <article
+                        id="cotizaciones"
+                        class="admin-card"
+                    >
+
+                        <div class="admin-card-icon">
+                            📋
+                        </div>
+
+                        <h3>Solicitudes de cotización</h3>
+
+                        <p>
+                            Revisa y administra las solicitudes
+                            realizadas por los clientes.
+                        </p>
+
+                        <a href="#" class="admin-button">
+                            Gestionar cotizaciones
+                        </a>
+
+                    </article>
+
+
+                    <!-- PRODUCTOS -->
+
+                    <article
+                        id="productos"
+                        class="admin-card"
+                    >
+
+                        <div class="admin-card-icon">
+                            📦
+                        </div>
+
+                        <h3>Productos</h3>
+
+                        <p>
+                            Administra los productos disponibles
+                            en el catálogo de Electorry.
+                        </p>
+
+                        <a href="#" class="admin-button">
+                            Gestionar productos
+                        </a>
+
+                    </article>
+
+
+                    <!-- SERVICIOS -->
+
+                    <article
+                        id="servicios"
+                        class="admin-card"
+                    >
+
+                        <div class="admin-card-icon">
+                            ⚡
+                        </div>
+
+                        <h3>Servicios</h3>
+
+                        <p>
+                            Administra los servicios ofrecidos
+                            por Electorry SPA.
+                        </p>
+
+                        <a href="#" class="admin-button">
+                            Gestionar servicios
+                        </a>
+
+                    </article>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer class="admin-footer">
+
+        <p>
+            © 2026 Electorry SPA -
+            Panel de Administración
+        </p>
+
+    </footer>
+
+</body>
+</html>
