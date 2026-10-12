@@ -1,0 +1,37 @@
+
+a.whatsapp-float {
+    position: fixed;
+    right: 15px;
+    bottom: 15px;
+    z-index: 9999;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+    min-width: 0;
+    min-height: 0;
+
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+    box-shadow: none;
+    line-height: 0;
+    font-size: 0;
+}
+
+a.whatsapp-float svg {
+    display: block;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+}
+
+a.whatsapp-float .whatsapp-label {
+    display: none;
+}
