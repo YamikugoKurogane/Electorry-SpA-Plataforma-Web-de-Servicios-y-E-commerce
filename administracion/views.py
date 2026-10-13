@@ -1,23 +1,33 @@
-from django.shortcuts import render
-
-
-def homeAdmin(request):
-    return render(request, "indexAdmin.html")
-
-#views para estados de cotizacion
-
 import json
-
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import ValidationError
 
-from .services import cambiar_estado_cotizacion
+from .services import (
+    cambiar_estado_cotizacion,
+    obtener_estado_cotizacion,
+    obtener_estado_cotizacion_display,
+)
 from mainPage.models import SolicitudCotizacion
 from .models import GestionEstadoCotizacion
 
+# Función de validación de rol para RBAC (Staff / Administrador)
+def es_administrador(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+# --- VISTA PRINCIPAL DE ADMINISTRACIÓN (PROTEGIDA CON RBAC) ---
 @login_required
+@user_passes_test(es_administrador)
+def homeAdmin(request):
+    return render(request, "indexAdmin.html")
+
+
+# --- VISTAS PARA GESTIÓN Y ESTADOS DE COTIZACIÓN (PROTEGIDAS CON RBAC) ---
+@login_required
+@user_passes_test(es_administrador)
 @require_POST
 def cambiar_estado_solicitud(request, solicitud_id):
 
@@ -26,7 +36,6 @@ def cambiar_estado_solicitud(request, solicitud_id):
             id=solicitud_id
         )
     except SolicitudCotizacion.DoesNotExist:
-
         return JsonResponse(
             {
                 'success': False,
@@ -37,9 +46,7 @@ def cambiar_estado_solicitud(request, solicitud_id):
 
     try:
         data = json.loads(request.body)
-
     except json.JSONDecodeError:
-
         return JsonResponse(
             {
                 'success': False,
@@ -52,7 +59,6 @@ def cambiar_estado_solicitud(request, solicitud_id):
     observacion = data.get('observacion')
 
     if not nuevo_estado:
-
         return JsonResponse(
             {
                 'success': False,
@@ -62,15 +68,12 @@ def cambiar_estado_solicitud(request, solicitud_id):
         )
 
     try:
-
         gestion = cambiar_estado_cotizacion(
             solicitud=solicitud,
             nuevo_estado=nuevo_estado,
             observacion=observacion
         )
-
     except ValidationError as error:
-
         return JsonResponse(
             {
                 'success': False,
@@ -92,29 +95,16 @@ def cambiar_estado_solicitud(request, solicitud_id):
         status=200
     )
 
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-
-
-from .services import (
-    obtener_estado_cotizacion,
-    obtener_estado_cotizacion_display,
-)
-
 
 @login_required
-def detalle_solicitud_cotizacion(
-    request,
-    solicitud_id
-):
+@user_passes_test(es_administrador)
+def detalle_solicitud_cotizacion(request, solicitud_id):
 
     try:
         solicitud = SolicitudCotizacion.objects.get(
             id=solicitud_id
         )
-
     except SolicitudCotizacion.DoesNotExist:
-
         return JsonResponse(
             {
                 'success': False,
@@ -123,13 +113,8 @@ def detalle_solicitud_cotizacion(
             status=404
         )
 
-    estado = obtener_estado_cotizacion(
-        solicitud
-    )
-
-    estado_display = obtener_estado_cotizacion_display(
-        solicitud
-    )
+    estado = obtener_estado_cotizacion(solicitud)
+    estado_display = obtener_estado_cotizacion_display(solicitud)
 
     return JsonResponse(
         {
