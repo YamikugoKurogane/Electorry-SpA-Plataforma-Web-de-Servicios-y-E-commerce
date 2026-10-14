@@ -1,5 +1,5 @@
-from django import forms
-from django.contrib.auth.models import User
+from django import forms  # type: ignore[reportMissingImports]
+from django.contrib.auth.models import User  # type: ignore[reportMissingImports]
 
 class RegistroClienteForm(forms.ModelForm):
     password = forms.CharField(
@@ -31,7 +31,7 @@ class RegistroClienteForm(forms.ModelForm):
         return cleaned_data
 
 #Formulario para generar solicitud de cotizacion
-from django import forms
+from django import forms  # type: ignore[reportMissingImports]
 from .models import SolicitudCotizacion
 
 
@@ -128,3 +128,141 @@ class SolicitudCotizacionForm(forms.ModelForm):
             'archivo': 'Fotografías o archivos adicionales',
             'observaciones': 'Observaciones',
         }
+# ============================================================
+# FORMULARIO CRUD DE PRODUCTOS
+# ============================================================
+
+from .models import Producto, Servicio
+
+
+class ProductoForm(forms.ModelForm):
+
+    class Meta:
+        model = Producto
+        fields = [
+            'categoria',
+            'nombre',
+            'descripcion',
+            'sku',
+            'precio',
+            'stock',
+            'imagen_url',
+            'estado',
+        ]
+
+        widgets = {
+            'categoria': forms.Select(
+                attrs={'class': 'form-control'}
+            ),
+            'nombre': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Nombre del producto'
+                }
+            ),
+            'descripcion': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Descripción del producto',
+                    'rows': 4
+                }
+            ),
+            'sku': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Código SKU (opcional)'
+                }
+            ),
+            'precio': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'step': '0.01'
+                }
+            ),
+            'stock': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'step': '1'
+                }
+            ),
+            'imagen_url': forms.URLInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'https://ejemplo.com/imagen.jpg'
+                }
+            ),
+            'estado': forms.CheckboxInput(
+                attrs={'class': 'form-check-input'}
+            ),
+        }
+
+    def clean_precio(self):
+        precio = self.cleaned_data['precio']
+        if precio < 0:
+            raise forms.ValidationError(
+                'El precio no puede ser negativo.'
+            )
+        return precio
+
+    def clean_stock(self):
+        stock = self.cleaned_data['stock']
+        if stock < 0:
+            raise forms.ValidationError(
+                'El stock no puede ser negativo.'
+            )
+        return stock
+
+
+# ============================================================
+# FORMULARIO CRUD DE SERVICIOS
+# ============================================================
+
+class ServicioForm(forms.ModelForm):
+
+    class Meta:
+        model = Servicio
+        fields = [
+            'nombre',
+            'descripcion',
+            'precio_referencial',
+            'estado',
+        ]
+
+        widgets = {
+            'nombre': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Nombre del servicio'
+                }
+            ),
+            'descripcion': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Descripción del servicio',
+                    'rows': 4
+                }
+            ),
+            'precio_referencial': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'step': '0.01',
+                    'placeholder': 'Precio referencial'
+                }
+            ),
+            'estado': forms.CheckboxInput(
+                attrs={'class': 'form-check-input'}
+            ),
+        }
+
+    def clean_precio_referencial(self):
+        precio = self.cleaned_data.get('precio_referencial')
+
+        if precio is not None and precio < 0:
+            raise forms.ValidationError(
+                'El precio referencial no puede ser negativo.'
+            )
+
+        return precio
