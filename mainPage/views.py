@@ -14,14 +14,29 @@ try:
 except ImportError:
     pisa = None
 
-from .forms import ProductoForm, RegistroClienteForm, ServicioForm
+from .forms import (
+    ProductoForm,
+    RegistroClienteForm,
+    ServicioForm,
+    SolicitudCotizacionForm,
+)
 from .models import Cotizacion, Producto, Servicio
 
 logger = logging.getLogger("django")
 
 
 def home(request):
-    return render(request, "index.html")
+    form = SolicitudCotizacionForm(request.POST or None, request.FILES or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(
+            request,
+            "Tu solicitud de cotización fue enviada correctamente. Nuestro equipo la revisará pronto.",
+        )
+        return redirect("home")
+
+    return render(request, "index.html", {"form": form})
 
 
 def registro_cliente_view(request):

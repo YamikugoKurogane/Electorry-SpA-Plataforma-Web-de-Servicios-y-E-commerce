@@ -362,9 +362,77 @@
                 para que podamos revisar tu proyecto.
             </p>
 
-            <a href="#" class="btn btn-primary">
-                Solicitar cotización
-            </a>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success" style="margin-bottom: 1rem;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'home' %}" enctype="multipart/form-data" class="quote-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" style="margin-bottom: 1rem;">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}<div class="text-danger">{{ form.nombre.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.apellido.id_for_label }}">{{ form.apellido.label }}</label>
+                        {{ form.apellido }}
+                        {% if form.apellido.errors %}<div class="text-danger">{{ form.apellido.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.correo.id_for_label }}">{{ form.correo.label }}</label>
+                        {{ form.correo }}
+                        {% if form.correo.errors %}<div class="text-danger">{{ form.correo.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}<div class="text-danger">{{ form.telefono.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        <label for="{{ form.tipo_solicitud.id_for_label }}">{{ form.tipo_solicitud.label }}</label>
+                        {{ form.tipo_solicitud }}
+                        {% if form.tipo_solicitud.errors %}<div class="text-danger">{{ form.tipo_solicitud.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}<div class="text-danger">{{ form.descripcion.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.ubicacion.id_for_label }}">{{ form.ubicacion.label }}</label>
+                        {{ form.ubicacion }}
+                        {% if form.ubicacion.errors %}<div class="text-danger">{{ form.ubicacion.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.archivo.id_for_label }}">{{ form.archivo.label }}</label>
+                        {{ form.archivo }}
+                        {% if form.archivo.errors %}<div class="text-danger">{{ form.archivo.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        <label for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <button type="submit" class="btn btn-primary">
+                        Enviar solicitud
+                    </button>
+                </div>
+            </form>
 
         </div>
 
