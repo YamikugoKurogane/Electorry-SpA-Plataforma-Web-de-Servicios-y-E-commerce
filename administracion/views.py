@@ -1,17 +1,25 @@
 import json
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.exceptions import ValidationError
+import logging
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.http import JsonResponse  # type: ignore
+from django.views.decorators.http import require_POST  # type: ignore
+from django.contrib.auth.decorators import login_required, user_passes_test  # type: ignore
+from django.contrib import messages  # type: ignore
+from django.core.exceptions import ValidationError  # type: ignore
 
 from .services import (
     cambiar_estado_cotizacion,
     obtener_estado_cotizacion,
     obtener_estado_cotizacion_display,
 )
-from mainPage.models import SolicitudCotizacion
-from .models import GestionEstadoCotizacion
+
+# IMPORTACIONES DESDE MAINPAGE (MODELOS Y FORMULARIOS)
+from mainPage.models import SolicitudCotizacion, Servicio  # type: ignore
+from mainPage.forms import ServicioForm  # type: ignore
+from .models import GestionEstadoCotizacion  # type: ignore
+
+# Configuración del logger alineado con ejecucion.log
+logger = logging.getLogger('ejecucion')
 
 # Función de validación de rol para RBAC (Staff / Administrador)
 def es_administrador(user):
@@ -23,6 +31,63 @@ def es_administrador(user):
 @user_passes_test(es_administrador)
 def homeAdmin(request):
     return render(request, "indexAdmin.html")
+
+
+# ============================================================
+# VISTAS CRUD PARA MANTENEDOR DE SERVICIOS FOTOVOLTAICOS [HU-11]
+# ============================================================
+
+@login_required
+@user_passes_test(es_administrador)
+def servicio_listar(request):
+    servicios = Servicio.objects.all()
+    return render(request, 'administracion/servicios_list.html', {'servicios': servicios})
+
+
+@login_required
+@user_passes_test(es_administrador)
+def servicio_crear(request):
+    if request.method == 'POST':
+        form = ServicioForm(request.POST, request.FILES)
+        if form.is_valid():
+            servicio = form.save()
+            logger.info(f"[CRUD SERVICIOS] Servicio creado exitosamente: ID {servicio.id} - '{servicio.nombre}' por usuario '{request.user.username}'")
+            messages.success(request, f"Servicio '{servicio.nombre}' creado exitosamente.")
+            return redirect('servicio_listar')
+        else:
+            logger.warning(f"[CRUD SERVICIOS] Error de validación al crear servicio por usuario '{request.user.username}': {form.errors}")
+    else:
+        form = ServicioForm()
+    return render(request, 'administracion/servicio_form.html', {'form': form, 'titulo': 'Crear Servicio Fotovoltaico'})
+
+
+@login_required
+@user_passes_test(es_administrador)
+def servicio_editar(request, pk):
+    servicio = get_object_or_404(Servicio, pk=pk)
+    if request.method == 'POST':
+        form = ServicioForm(request.POST, request.FILES, instance=servicio)
+        if form.is_valid():
+            form.save()
+            logger.info(f"[CRUD SERVICIOS] Servicio actualizado: ID {servicio.id} - '{servicio.nombre}' por usuario '{request.user.username}'")
+            messages.success(request, f"Servicio '{servicio.nombre}' actualizado correctamente.")
+            return redirect('servicio_listar')
+    else:
+        form = ServicioForm(instance=servicio)
+    return render(request, 'administracion/servicio_form.html', {'form': form, 'titulo': 'Editar Servicio Fotovoltaico'})
+
+
+@login_required
+@user_passes_test(es_administrador)
+def servicio_eliminar(request, pk):
+    servicio = get_object_or_404(Servicio, pk=pk)
+    if request.method == 'POST':
+        nombre = servicio.nombre
+        servicio.delete()
+        logger.info(f"[CRUD SERVICIOS] Servicio eliminado: ID {pk} - '{nombre}' por usuario '{request.user.username}'")
+        messages.success(request, f"Servicio '{nombre}' eliminado correctamente.")
+        return redirect('servicio_listar')
+    return render(request, 'administracion/servicio_confirm_delete.html', {'servicio': servicio})
 
 
 # --- VISTAS PARA GESTIÓN Y ESTADOS DE COTIZACIÓN (PROTEGIDAS CON RBAC) ---
