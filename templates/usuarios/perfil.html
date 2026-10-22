@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Mi cuenta · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="medium stack">
+  <h1>Mi cuenta</h1>
+  <div class="card">
+    <h2>Mis datos</h2>
+    <p class="muted small">Correo: <strong>{{ user.email }}</strong> · Rol: {{ user.get_rol_display }}</p>
+    <form method="post" class="form" novalidate>{% csrf_token %}{% include "partials/form.html" %}<div><button class="btn" type="submit">Guardar cambios</button></div></form>
+  </div>
+  <div class="card">
+    <h2>Seguridad</h2>
+    <a class="btn ghost" href="{% url 'usuarios:cambiar_password' %}">Cambiar contraseña</a>
+  </div>
+  {% if user.es_cliente %}
+  <div class="card">
+    <h2>Privacidad</h2>
+    <p class="muted">Puedes eliminar tus datos personales en cualquier momento. <a href="{% url 'core:privacidad' %}">Más información</a>.</p>
+    <a class="btn danger small" href="{% url 'usuarios:eliminar_cuenta' %}">Eliminar mi cuenta y mis datos</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

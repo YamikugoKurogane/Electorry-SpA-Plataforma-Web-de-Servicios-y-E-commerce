@@ -1,0 +1,21 @@
+{% extends "panel/base.html" %}{% load electorry %}
+{% block panel %}
+<h1>Resumen</h1>
+<div class="grid cols-4">
+  {% for etiqueta, n, codigo in tarjetas %}
+  <div class="card stat"><a href="{% url 'panel:solicitudes' %}?estado={{ codigo }}"><div class="n">{{ n }}</div><span class="estado estado-{{ codigo|estado_css }}">{{ etiqueta }}</span></a></div>
+  {% endfor %}
+</div>
+<div class="grid cols-4">
+  <div class="card stat"><div class="n">{{ borradores }}</div><span class="muted small">Cotizaciones en borrador</span></div>
+  <div class="card stat"><div class="n">{{ ventas_pendientes }}</div><span class="muted small">Ventas pendientes de pago</span></div>
+  {% if user.es_admin %}
+  <div class="card stat"><div class="n">{{ correos_pendientes }}</div><a class="small" href="{% url 'panel:notificaciones' %}?estado=PENDIENTE">Correos pendientes</a></div>
+  <div class="card stat"><div class="n">{{ correos_fallidos }}</div><a class="small" href="{% url 'panel:notificaciones' %}?estado=FALLIDA">Correos fallidos</a></div>
+  {% endif %}
+</div>
+<div class="card"><h2>Solicitudes recientes</h2>
+<div class="table-wrap"><table><thead><tr><th>Código</th><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
+{% for s in recientes %}<tr><td><a href="{% url 'panel:solicitud_detalle' s.pk %}">{{ s.codigo }}</a></td><td>{{ s.nombre_contacto }}</td><td>{{ s.servicio.nombre }}</td><td>{{ s.creada|date:"d-m-Y H:i" }}</td><td><span class="estado estado-{{ s.estado|estado_css }}">{{ s.get_estado_display }}</span></td></tr>
+{% empty %}<tr><td colspan="5" class="empty">Sin solicitudes todavía.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

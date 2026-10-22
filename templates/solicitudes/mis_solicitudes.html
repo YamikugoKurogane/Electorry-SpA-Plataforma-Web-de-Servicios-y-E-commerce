@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}Mis solicitudes · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="row between"><h1>Mis solicitudes</h1><a class="btn" href="{% url 'solicitudes:crear' %}">Nueva solicitud</a></div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Código</th><th>Servicio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+  {% for s in pagina %}
+    <tr><td><a href="{{ s.get_absolute_url }}"><strong>{{ s.codigo }}</strong></a></td><td>{{ s.servicio.nombre }}</td><td>{{ s.creada|date:"d-m-Y H:i" }}</td>
+      <td><span class="estado estado-{{ s.estado|estado_css }}">{{ s.get_estado_display }}</span></td><td class="right"><a class="btn ghost small" href="{{ s.get_absolute_url }}">Ver</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="empty">Aún no tienes solicitudes. <a href="{% url 'solicitudes:crear' %}">Crea la primera</a>.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% include "partials/paginacion.html" %}
+{% endblock %}

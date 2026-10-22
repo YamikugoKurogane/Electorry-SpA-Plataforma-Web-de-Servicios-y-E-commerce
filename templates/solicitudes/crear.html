@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Solicitar cotización · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card medium">
+  <h1>Solicitar cotización</h1>
+  <p class="muted">Cuéntanos qué necesitas. Responderemos por correo y podrás seguir el estado desde tu cuenta.</p>
+  <form method="post" enctype="multipart/form-data" class="form" novalidate data-once>{% csrf_token %}
+    {% include "partials/form.html" %}
+    <p class="small muted">Al enviar aceptas que usemos estos datos para responder tu solicitud, según nuestro <a href="{% url 'core:privacidad' %}" target="_blank">aviso de privacidad</a>.</p>
+    <div><button class="btn" type="submit">Enviar solicitud</button></div>
+  </form>
+</div>
+{% endblock %}

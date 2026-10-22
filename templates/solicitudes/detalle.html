@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}{{ solicitud.codigo }} · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% if user.es_personal %}{% url 'panel:solicitudes' %}{% else %}{% url 'solicitudes:mis_solicitudes' %}{% endif %}">← Volver</a></p>
+<div class="row between"><h1>{{ solicitud.codigo }}</h1><span class="estado estado-{{ solicitud.estado|estado_css }}" style="font-size:1rem">{{ solicitud.get_estado_display }}</span></div>
+{% include "solicitudes/_detalle_cuerpo.html" %}
+
+<h2 class="section-title">Cotizaciones</h2>
+{% for cot in cotizaciones %}
+<div class="card" style="margin-bottom:1rem">
+  <div class="row between"><h3 style="margin:0">{{ cot.codigo }} <span class="estado estado-{{ cot.estado|estado_css }}">{{ cot.get_estado_display }}</span></h3>
+    <a class="btn ghost small" href="{% url 'cotizaciones:detalle' cot.pk %}">Ver / imprimir</a></div>
+  <p class="muted small">Total con IVA: <strong>{{ cot.total|clp }}</strong>{% if cot.validez_hasta %} · válida hasta {{ cot.validez_hasta|date:"d-m-Y" }}{% endif %}</p>
+  {% if cot.estado == "ENVIADA" and user.es_cliente %}
+  <form method="post" action="{% url 'cotizaciones:responder' cot.pk %}" class="row" data-once>{% csrf_token %}
+    <button class="btn" name="accion" value="aceptar" type="submit">Aceptar cotización</button>
+    <button class="btn ghost" name="accion" value="rechazar" type="submit">Rechazar</button>
+  </form>
+  {% endif %}
+</div>
+{% empty %}<div class="card empty">Aún no hay cotizaciones para esta solicitud.</div>{% endfor %}
+{% endblock %}

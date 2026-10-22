@@ -1,0 +1,4 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Redirigiendo al pago…</title></head>
+<body><p>Redirigiendo a la pasarela de pago…</p>
+<form id="f" method="post" action="{{ inicio.url }}">{% for k, v in inicio.campos.items %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}<noscript><button type="submit">Continuar al pago</button></noscript></form>
+<script>document.getElementById("f").submit();</script></body></html>

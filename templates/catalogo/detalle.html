@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ servicio.nombre }} · {{ EMPRESA.nombre }}{% endblock %}
+{% block description %}{{ servicio.resumen }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'catalogo:lista' %}">← Servicios</a></p>
+<article class="card medium stack" style="margin:0">
+  <div class="row"><span class="pill">{{ servicio.categoria }}</span>
+    {% if servicio.disponible %}<span class="estado estado-aprobado">Disponible</span>{% else %}<span class="estado">No disponible por ahora</span>{% endif %}</div>
+  <h1>{{ servicio.nombre }}</h1>
+  <p class="muted" style="font-size:1.1rem">{{ servicio.resumen }}</p>
+  <div>{{ servicio.descripcion|linebreaks }}</div>
+  {% if servicio.disponible %}
+    {% if user.is_authenticated and not user.es_cliente %}<p class="muted small">Estás en una cuenta interna; las solicitudes las crean los clientes.</p>
+    {% else %}<a class="btn" href="{% url 'solicitudes:crear' %}?servicio={{ servicio.pk }}">Solicitar cotización</a>{% endif %}
+  {% endif %}
+</article>
+{% endblock %}

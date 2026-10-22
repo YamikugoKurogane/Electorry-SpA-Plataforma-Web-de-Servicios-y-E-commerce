@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Panel · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="panel">
+  <aside class="sidebar no-print" aria-label="Panel">
+    <a href="{% url 'panel:dashboard' %}" class="{% if seccion == 'dashboard' %}active{% endif %}">📊 Resumen</a>
+    <h4>Operación</h4>
+    <a href="{% url 'panel:solicitudes' %}" class="{% if seccion == 'solicitudes' %}active{% endif %}">Solicitudes</a>
+    <a href="{% url 'panel:cotizaciones' %}" class="{% if seccion == 'cotizaciones' %}active{% endif %}">Cotizaciones</a>
+    <a href="{% url 'panel:clientes' %}" class="{% if seccion == 'clientes' %}active{% endif %}">Clientes</a>
+    <a href="{% url 'panel:ventas' %}" class="{% if seccion == 'ventas' %}active{% endif %}">Ventas</a>
+    {% if user.es_admin %}
+    <h4>Catálogo</h4>
+    <a href="{% url 'panel:servicios' %}" class="{% if seccion == 'servicios' %}active{% endif %}">Servicios</a>
+    <a href="{% url 'panel:productos' %}" class="{% if seccion == 'productos' %}active{% endif %}">Productos</a>
+    <h4>Administración</h4>
+    <a href="{% url 'panel:reportes' %}" class="{% if seccion == 'reportes' %}active{% endif %}">Reportes</a>
+    <a href="{% url 'panel:usuarios' %}" class="{% if seccion == 'usuarios' %}active{% endif %}">Usuarios y roles</a>
+    <a href="{% url 'panel:auditoria' %}" class="{% if seccion == 'auditoria' %}active{% endif %}">Auditoría</a>
+    <a href="{% url 'panel:notificaciones' %}" class="{% if seccion == 'notificaciones' %}active{% endif %}">Correos</a>
+    {% endif %}
+  </aside>
+  <section class="stack" style="min-width:0">{% block panel %}{% endblock %}</section>
+</div>
+{% endblock %}

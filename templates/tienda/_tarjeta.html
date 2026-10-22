@@ -1,0 +1,8 @@
+{% load electorry %}
+<article class="card">
+  <a class="thumb" href="{{ p.get_absolute_url }}">{% if p.imagen %}<img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" loading="lazy">{% else %}🔌{% endif %}</a>
+  <span class="pill">{{ p.categoria }}</span>
+  <h3 style="margin-top:.4rem"><a href="{{ p.get_absolute_url }}" style="text-decoration:none">{{ p.nombre }}</a></h3>
+  <div class="row between"><span class="price">{{ p.precio|clp }}</span>
+    <form method="post" action="{% url 'tienda:carrito_agregar' p.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small" type="submit">Agregar</button></form></div>
+</article>

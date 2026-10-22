@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}Carrito · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<h1>Tu carrito</h1>
+{% if lineas %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Producto</th><th class="num">Precio</th><th>Cantidad</th><th class="num">Subtotal</th><th></th></tr></thead>
+  <tbody>{% for l in lineas %}
+    <tr><td><a href="{{ l.producto.get_absolute_url }}">{{ l.producto.nombre }}</a></td><td class="num">{{ l.producto.precio|clp }}</td>
+      <td><form method="post" action="{% url 'tienda:carrito_actualizar' l.producto.pk %}" class="row">{% csrf_token %}
+        <input type="number" name="cantidad" value="{{ l.cantidad }}" min="0" max="50" style="width:4.5rem;padding:.4rem;border:1px solid #c7d0dc;border-radius:8px" aria-label="Cantidad"><button class="btn ghost small" type="submit">Actualizar</button></form></td>
+      <td class="num">{{ l.subtotal|clp }}</td>
+      <td><form method="post" action="{% url 'tienda:carrito_quitar' l.producto.pk %}">{% csrf_token %}<button class="btn ghost small" type="submit">Quitar</button></form></td></tr>
+  {% endfor %}</tbody>
+  <tfoot><tr><td colspan="3" class="num"><strong>Total (IVA incluido)</strong></td><td class="num"><strong>{{ total|clp }}</strong></td><td></td></tr></tfoot>
+</table></div>
+<div class="row" style="margin-top:1rem"><a class="btn ghost" href="{% url 'tienda:lista' %}">Seguir comprando</a>
+  {% if user.is_authenticated and not user.es_cliente %}<span class="muted">Las compras las realizan los clientes.</span>
+  {% elif user.is_authenticated %}<a class="btn" href="{% url 'tienda:checkout' %}">Continuar con la compra</a>
+  {% else %}<a class="btn" href="{% url 'usuarios:login' %}?next={% url 'tienda:checkout' %}">Ingresar para comprar</a>
+  <span class="muted small">¿Sin cuenta? <a href="{% url 'usuarios:registro' %}?next={% url 'tienda:checkout' %}">Créala aquí</a>.</span>{% endif %}</div>
+{% else %}<div class="card empty">Tu carrito está vacío. <a href="{% url 'tienda:lista' %}">Ver productos</a>.</div>{% endif %}
+{% endblock %}

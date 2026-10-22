@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Servicios · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<h1>Servicios</h1>
+<form class="filters" method="get">
+  <div><label for="q">Buscar</label><input id="q" name="q" value="{{ q }}" placeholder="Ej: tablero, instalación…"></div>
+  <div><label for="categoria">Categoría</label>
+    <select id="categoria" name="categoria"><option value="">Todas</option>{% for c in categorias %}<option value="{{ c.pk }}" {% if cat == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}</select></div>
+  <div style="flex:0 0 auto"><button class="btn secondary" type="submit">Filtrar</button></div>
+</form>
+<div class="grid cols-3">
+  {% for s in pagina %}
+  <article class="card">
+    <div class="row between"><span class="pill">{{ s.categoria }}</span>
+      {% if s.disponible %}<span class="estado estado-aprobado">Disponible</span>{% else %}<span class="estado">No disponible</span>{% endif %}</div>
+    <h3 style="margin-top:.6rem"><a href="{{ s.get_absolute_url }}" style="text-decoration:none">{{ s.nombre }}</a></h3>
+    <p class="muted">{{ s.resumen }}</p>
+    <a class="btn small" href="{{ s.get_absolute_url }}">Ver detalle</a>
+  </article>
+  {% empty %}<div class="card empty" style="grid-column:1/-1">No encontramos servicios con esos filtros.</div>{% endfor %}
+</div>
+{% include "partials/paginacion.html" %}
+{% endblock %}

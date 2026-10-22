@@ -1,0 +1,26 @@
+{% load electorry %}
+<div class="grid cols-2">
+  <div class="card">
+    <h2>Datos de la solicitud</h2>
+    <dl class="meta">
+      <dt>Servicio</dt><dd>{{ solicitud.servicio.nombre }}</dd>
+      <dt>Fecha</dt><dd>{{ solicitud.creada|date:"d-m-Y H:i" }}</dd>
+      <dt>Dirección</dt><dd>{{ solicitud.direccion }}{% if solicitud.comuna %}, {{ solicitud.comuna }}{% endif %}</dd>
+      <dt>Contacto</dt><dd>{{ solicitud.nombre_contacto }}<br>{{ solicitud.telefono_contacto }}<br>{{ solicitud.email_contacto }}</dd>
+    </dl>
+    <h3 style="margin-top:1rem">Descripción</h3>
+    {{ solicitud.descripcion|linebreaks }}
+    {% if adjuntos %}<h3>Adjuntos</h3><ul>{% for a in adjuntos %}<li><a href="{% url 'solicitudes:adjunto' a.pk %}" target="_blank" rel="noopener">{{ a.nombre_original }}</a> <span class="muted small">({{ a.tamano|filesizeformat }})</span></li>{% endfor %}</ul>{% endif %}
+  </div>
+  <div class="card">
+    <h2>Historial de estados</h2>
+    <ul class="timeline">
+      {% for h in historial %}
+      <li><span class="estado estado-{{ h.estado_nuevo|estado_css }}">{{ h.get_estado_nuevo_display }}</span>
+        {% if h.estado_anterior %}<span class="muted small"> (antes: {{ h.get_estado_anterior_display }})</span>{% endif %}<br>
+        <span class="small muted">{{ h.fecha|date:"d-m-Y H:i" }} · {{ h.usuario_nombre|default:"Sistema" }}</span>
+        {% if h.comentario %}<br><span class="small">{{ h.comentario }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

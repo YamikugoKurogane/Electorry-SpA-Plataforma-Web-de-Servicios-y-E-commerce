@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}{{ producto.nombre }} · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'tienda:lista' %}">← Productos</a></p>
+<article class="card medium"><div class="grid cols-2">
+  <div class="thumb" style="aspect-ratio:1">{% if producto.imagen %}<img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">{% else %}🔌{% endif %}</div>
+  <div class="stack"><span class="pill">{{ producto.categoria }}</span><h1>{{ producto.nombre }}</h1>
+    <p class="price" style="font-size:1.8rem">{{ producto.precio|clp }} <span class="muted small" style="font-weight:400">IVA incluido</span></p>
+    {{ producto.descripcion|linebreaks }}
+    <form method="post" action="{% url 'tienda:carrito_agregar' producto.pk %}" class="row">{% csrf_token %}
+      <input type="number" name="cantidad" value="1" min="1" max="50" style="width:5rem;padding:.55rem;border:1px solid #c7d0dc;border-radius:8px" aria-label="Cantidad">
+      <input type="hidden" name="next" value="{% url 'tienda:carrito' %}"><button class="btn" type="submit">Agregar al carrito</button></form></div>
+</div></article>
+{% endblock %}

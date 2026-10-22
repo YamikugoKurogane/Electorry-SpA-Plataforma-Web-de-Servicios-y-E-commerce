@@ -1,0 +1,26 @@
+{% extends "panel/base.html" %}
+{% block panel %}
+<p class="small"><a href="{% url 'panel:solicitud_detalle' solicitud.pk %}">← {{ solicitud.codigo }}</a></p>
+<div class="card" style="margin:0"><h1>{% if cot %}Editar {{ cot.codigo }}{% else %}Nueva cotización{% endif %} · {{ solicitud.codigo }}</h1>
+<p class="muted">Precios netos en pesos chilenos. El IVA se calcula automáticamente.</p>
+<form method="post" class="form" novalidate data-once>{% csrf_token %}
+  {% include "partials/form.html" %}
+  <h2>Líneas</h2>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}<div class="alert error">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+  <div id="lineas">
+  {% for f in formset %}
+    <div class="formset-row">{% for h in f.hidden_fields %}{{ h }}{% endfor %}
+      <div class="field {% if f.descripcion.errors %}has-error{% endif %}">{{ f.descripcion }}<div class="errors">{{ f.descripcion.errors|join:" " }}</div></div>
+      <div class="field {% if f.cantidad.errors %}has-error{% endif %}">{{ f.cantidad }}<div class="errors">{{ f.cantidad.errors|join:" " }}</div></div>
+      <div class="field {% if f.precio_unitario.errors %}has-error{% endif %}">{{ f.precio_unitario }}<div class="errors">{{ f.precio_unitario.errors|join:" " }}</div></div>
+      <div>{% if f.instance.pk %}<label class="small">{{ f.DELETE }} Quitar</label>{% endif %}</div></div>
+  {% endfor %}</div>
+  <template id="linea-vacia"><div class="formset-row">
+    <div class="field"><input type="text" name="lineas-__prefix__-descripcion" placeholder="Descripción" maxlength="250" id="id_lineas-__prefix__-descripcion"></div>
+    <div class="field"><input type="number" name="lineas-__prefix__-cantidad" value="1" min="1" id="id_lineas-__prefix__-cantidad"></div>
+    <div class="field"><input type="number" name="lineas-__prefix__-precio_unitario" min="0" placeholder="Precio neto" id="id_lineas-__prefix__-precio_unitario"></div><div></div></div></template>
+  <div><button type="button" id="add-linea" class="btn ghost small">+ Agregar línea</button></div>
+  <div class="row"><button class="btn" type="submit">Guardar borrador</button></div>
+</form></div>
+{% endblock %}

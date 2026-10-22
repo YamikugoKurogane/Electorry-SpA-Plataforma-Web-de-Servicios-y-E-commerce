@@ -1,0 +1,12 @@
+{% extends "panel/base.html" %}{% load electorry %}
+{% block panel %}
+<p class="small"><a href="{% url 'panel:clientes' %}">← Clientes</a></p>
+<h1>{{ cliente.nombre_completo|default:cliente.email }}</h1>
+<div class="card"><dl class="meta"><dt>Correo</dt><dd>{{ cliente.email }}</dd><dt>Teléfono</dt><dd>{{ cliente.telefono|default:"—" }}</dd><dt>Registrado</dt><dd>{{ cliente.date_joined|date:"d-m-Y" }}</dd>
+<dt>Privacidad</dt><dd>{% if cliente.fecha_privacidad %}Aceptada el {{ cliente.fecha_privacidad|date:"d-m-Y H:i" }}{% else %}—{% endif %}</dd></dl>
+{% if user.es_admin and not cliente.anonimizado %}<form method="post" action="{% url 'panel:cliente_anonimizar' cliente.pk %}" onsubmit="return confirm('Se eliminarán los datos personales de este cliente de forma permanente. ¿Continuar?')" style="margin-top:1rem">{% csrf_token %}<button class="btn danger small" type="submit">Eliminar datos personales</button></form>{% endif %}</div>
+<div class="card"><h2>Historial de solicitudes</h2><div class="table-wrap"><table><thead><tr><th>Código</th><th>Servicio</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
+{% for s in solicitudes %}<tr><td><a href="{% url 'panel:solicitud_detalle' s.pk %}">{{ s.codigo }}</a></td><td>{{ s.servicio.nombre }}</td><td>{{ s.creada|date:"d-m-Y" }}</td><td><span class="estado estado-{{ s.estado|estado_css }}">{{ s.get_estado_display }}</span></td></tr>{% empty %}<tr><td colspan="4" class="empty">Sin solicitudes.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card"><h2>Compras</h2><div class="table-wrap"><table><thead><tr><th>Compra</th><th>Fecha</th><th class="num">Total</th><th>Estado</th></tr></thead><tbody>
+{% for v in ventas %}<tr><td><a href="{% url 'panel:venta_detalle' v.pk %}">{{ v.codigo }}</a></td><td>{{ v.creada|date:"d-m-Y" }}</td><td class="num">{{ v.total|clp }}</td><td><span class="estado estado-{{ v.estado|estado_css }}">{{ v.get_estado_display }}</span></td></tr>{% empty %}<tr><td colspan="4" class="empty">Sin compras.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

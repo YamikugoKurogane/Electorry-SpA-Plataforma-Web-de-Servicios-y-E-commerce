@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}Confirmar compra · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<h1>Confirmar compra</h1>
+<div class="grid cols-2">
+  <div class="card"><h2>Datos de entrega</h2>
+    <form method="post" class="form" novalidate data-once>{% csrf_token %}{% include "partials/form.html" %}
+      <button class="btn" type="submit">Continuar al pago</button></form></div>
+  <div class="card"><h2>Resumen</h2>
+    <ul>{% for l in lineas %}<li>{{ l.cantidad }} × {{ l.producto.nombre }} — {{ l.subtotal|clp }}</li>{% endfor %}</ul>
+    <p class="price">Total: {{ total|clp }}</p>
+    <p class="muted small">Pagarás de forma segura en la pasarela de pago. Nosotros nunca vemos los datos de tu tarjeta.</p></div>
+</div>
+{% endblock %}

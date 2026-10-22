@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Solicitud no válida · Electorry{% endblock %}
+{% block content %}
+<div class="card narrow" style="text-align:center;margin-top:2rem">
+  <p style="font-size:3rem;margin:0">⚡</p>
+  <h1>Solicitud no válida</h1>
+  <p class="muted">No pudimos entender la solicitud.</p>
+  <p><a class="btn" href="{% url 'core:inicio' %}">Volver al inicio</a></p>
+</div>
+{% endblock %}

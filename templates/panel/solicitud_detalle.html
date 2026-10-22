@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}{% load electorry %}
+{% block panel %}
+<p class="small"><a href="{% url 'panel:solicitudes' %}">← Solicitudes</a></p>
+<div class="row between"><h1>{{ solicitud.codigo }}</h1><span class="estado estado-{{ solicitud.estado|estado_css }}" style="font-size:1rem">{{ solicitud.get_estado_display }}</span></div>
+{% include "solicitudes/_detalle_cuerpo.html" %}
+<div class="grid cols-2">
+  <div class="card"><h2>Cambiar estado</h2>
+    {% if permitidos %}<form method="post" class="form" data-once>{% csrf_token %}{% include "partials/form.html" %}<div><button class="btn" type="submit">Actualizar y notificar</button></div></form>
+    {% else %}<p class="muted">Esta solicitud está en un estado final.</p>{% endif %}</div>
+  <div class="card"><h2>Cotizaciones</h2>
+    <ul>{% for c in cotizaciones %}<li><a href="{% url 'cotizaciones:detalle' c.pk %}">{{ c.codigo }}</a> <span class="estado estado-{{ c.estado|estado_css }}">{{ c.get_estado_display }}</span> · {{ c.total|clp }}</li>{% empty %}<li class="muted">Sin cotizaciones.</li>{% endfor %}</ul>
+    {% if solicitud.estado != "CANCELADA" and solicitud.estado != "FINALIZADA" %}<a class="btn secondary" href="{% url 'panel:cotizacion_crear' solicitud.pk %}">+ Nueva cotización</a>{% endif %}
+    <p class="small" style="margin-top:.8rem"><a href="{% url 'panel:auditoria' %}?entidad=solicitud&id={{ solicitud.pk }}">Ver auditoría de esta solicitud</a></p></div>
+</div>
+{% endblock %}

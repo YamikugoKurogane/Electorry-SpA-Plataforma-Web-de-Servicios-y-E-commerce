@@ -1,0 +1,73 @@
+# Mismo stack para staging y producción: cambian solo las variables de entorno (EC-11).
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: electorry
+      POSTGRES_USER: electorry
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U electorry"]
+      interval: 10s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped   # reinicio automático ante caída (R1)
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?define DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?define DJANGO_ALLOWED_HOSTS}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_SSL_REDIRECT: ${DJANGO_SSL_REDIRECT:-true}
+      USE_X_FORWARDED_FOR: "true"
+      DATABASE_URL: postgres://electorry:${POSTGRES_PASSWORD}@db:5432/electorry
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-webpay}
+      PAYMENT_SANDBOX_PERMITIDO: ${PAYMENT_SANDBOX_PERMITIDO:-false}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      CORREO_AVISOS_INTERNOS: ${CORREO_AVISOS_INTERNOS:-}
+      LOG_DIR: /app/logs
+    volumes: [media:/app/media, static:/app/staticfiles, logs:/app/logs]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/salud/', timeout=5)"]
+      interval: 30s
+      retries: 3
+
+  nginx:
+    image: nginx:1.27
+    restart: unless-stopped
+    depends_on: [web]
+    ports: ["80:80"]
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - media:/app/media:ro
+      - static:/app/staticfiles:ro
+
+  # Correos pendientes/fallidos: reintento cada 5 minutos (D8)
+  correo:
+    build: .
+    restart: unless-stopped
+    depends_on: [web]
+    command: ["sh", "-c", "while true; do python manage.py enviar_notificaciones; sleep 300; done"]
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      DATABASE_URL: postgres://electorry:${POSTGRES_PASSWORD}@db:5432/electorry
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+
+  # Respaldo diario con retención de 14 días (RNF-FIA-03: RPO ≤ 24 h)
+  respaldo:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment: { PGHOST: db, PGUSER: electorry, PGDATABASE: electorry, PGPASSWORD: "${POSTGRES_PASSWORD}", RETENCION_DIAS: "14" }
+    volumes: [./deploy/backup.sh:/backup.sh:ro, backups:/backups]
+    entrypoint: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
+
+volumes: { pgdata: {}, media: {}, static: {}, logs: {}, backups: {} }

@@ -1,0 +1,23 @@
+{% extends "panel/base.html" %}{% load electorry %}
+{% block panel %}
+<h1>Reportes</h1>
+<form class="filters no-print" method="get"><div><label for="desde">Desde</label><input id="desde" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"></div>
+<div><label for="hasta">Hasta</label><input id="hasta" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"></div>
+<div style="flex:0 0 auto"><button class="btn secondary" type="submit">Aplicar</button></div>
+<div style="flex:0 0 auto"><a class="btn ghost" href="?desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}&exportar=solicitudes">Exportar solicitudes (CSV)</a></div>
+<div style="flex:0 0 auto"><a class="btn ghost" href="?desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}&exportar=cotizaciones">Exportar cotizaciones (CSV)</a></div></form>
+<div class="grid cols-2">
+  <div class="card"><h2>Solicitudes ({{ solicitudes.total }})</h2>
+    {% for etiqueta, n in solicitudes.por_estado %}<div class="bar-row"><span>{{ etiqueta }}</span><div class="bar"><span style="width:{% widthratio n maximo 100 %}%"></span></div><strong>{{ n }}</strong></div>{% endfor %}
+    <h3 style="margin-top:1rem">Por mes</h3>{% for mes, n in solicitudes.por_mes %}<div class="small">{{ mes }}: <strong>{{ n }}</strong></div>{% empty %}<p class="muted small">Sin datos.</p>{% endfor %}</div>
+  <div class="card"><h2>Servicios más solicitados</h2>
+    <table><tbody>{% for nombre, n in solicitudes.por_servicio %}<tr><td>{{ nombre }}</td><td class="num"><strong>{{ n }}</strong></td></tr>{% empty %}<tr><td class="muted">Sin datos.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="card"><h2>Cotizaciones ({{ cotizaciones.total }})</h2>
+  <div class="table-wrap"><table><thead><tr><th>Estado</th><th class="num">Cantidad</th><th class="num">Neto</th><th class="num">Con IVA</th></tr></thead><tbody>
+  {% for etiqueta, n, neto, total in cotizaciones.por_estado %}<tr><td>{{ etiqueta }}</td><td class="num">{{ n }}</td><td class="num">{{ neto|clp }}</td><td class="num">{{ total|clp }}</td></tr>{% endfor %}</tbody></table></div>
+  <p style="margin-top:.8rem">Monto aceptado: <strong>{{ cotizaciones.monto_aceptado_total|clp }}</strong> (IVA incl.) · Tasa de aceptación: <strong>{% if cotizaciones.tasa_aceptacion is None %}—{% else %}{{ cotizaciones.tasa_aceptacion }}%{% endif %}</strong></p></div>
+<div class="card"><h2>Ventas</h2>
+  <table><tbody>{% for etiqueta, n, monto in ventas.por_estado %}<tr><td>{{ etiqueta }}</td><td class="num">{{ n }}</td><td class="num">{{ monto|clp }}</td></tr>{% endfor %}</tbody></table>
+  <p>Ingresos confirmados: <strong>{{ ventas.ingresos|clp }}</strong></p></div>
+{% endblock %}

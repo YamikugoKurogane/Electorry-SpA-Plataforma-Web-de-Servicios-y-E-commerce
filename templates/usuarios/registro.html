@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Crear cuenta</h1>
+  <p class="muted">Necesitas una cuenta para solicitar cotizaciones y comprar. Explorar el catálogo es libre.</p>
+  <form method="post" class="form" novalidate data-once>{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% include "partials/form.html" %}
+    <p class="small muted">Lee nuestro <a href="{% url 'core:privacidad' %}" target="_blank">aviso de privacidad</a>.</p>
+    <button class="btn" type="submit">Crear cuenta</button>
+  </form>
+  <p class="muted small" style="margin-top:1rem">¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}">Ingresar</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% load electorry %}
+{% if pagina.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="Paginación">
+  {% if pagina.has_previous %}<a class="btn ghost small" href="?{% qs_sin_pagina pagina=pagina.previous_page_number %}">← Anterior</a>{% endif %}
+  <span class="muted small">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }} ({{ pagina.paginator.count }} resultados)</span>
+  {% if pagina.has_next %}<a class="btn ghost small" href="?{% qs_sin_pagina pagina=pagina.next_page_number %}">Siguiente →</a>{% endif %}
+</nav>
+{% endif %}

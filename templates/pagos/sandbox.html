@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Pasarela simulada · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow stack"><div class="alert warning"><strong>Pasarela SIMULADA</strong> (entorno de pruebas). No se realiza ningún cobro real.</div>
+  <h1>Simular resultado del pago</h1>
+  <form method="post" class="row">{% csrf_token %}
+    <button class="btn" name="resultado" value="aprobar" type="submit">Aprobar pago</button>
+    <button class="btn danger" name="resultado" value="rechazar" type="submit">Rechazar pago</button></form></div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "panel/base.html" %}
+{% block panel %}
+<p class="small"><a href="{% url url_lista %}">← Volver</a></p>
+<div class="card medium" style="margin:0"><h1>{{ titulo }}</h1>
+<form method="post" class="form" novalidate data-once{% if multipart %} enctype="multipart/form-data"{% endif %}>{% csrf_token %}{% include "partials/form.html" %}
+  <div class="row"><button class="btn" type="submit">Guardar</button><a class="btn ghost" href="{% url url_lista %}">Cancelar</a></div></form></div>
+{% endblock %}

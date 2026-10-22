@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% load electorry %}
+{% block content %}
+<section class="hero">
+  <h1>Soluciones eléctricas confiables, con seguimiento claro.</h1>
+  <p>Cotiza servicios eléctricos y compra productos en un solo lugar. Sigue el estado de tu solicitud en línea, sin perder mensajes ni esperar días por una respuesta.</p>
+  <div class="row" style="margin-top:1.2rem">
+    <a class="btn" href="{% url 'solicitudes:crear' %}">Solicitar cotización</a>
+    <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" href="{% url 'catalogo:lista' %}">Ver servicios</a>
+  </div>
+</section>
+
+<h2 class="section-title" style="margin-bottom:.5rem">¿Cómo funciona?</h2>
+<ol class="steps">
+  <li><strong>Crea tu cuenta</strong><br><span class="muted">Es gratis y toma un minuto.</span></li>
+  <li><strong>Describe lo que necesitas</strong><br><span class="muted">Puedes adjuntar fotos o documentos.</span></li>
+  <li><strong>Recibe tu cotización</strong><br><span class="muted">Te avisamos por correo y la ves en tu cuenta.</span></li>
+  <li><strong>Acepta y listo</strong><br><span class="muted">Sigues cada etapa hasta la finalización.</span></li>
+</ol>
+
+<div class="section-title"><h2>Nuestros servicios</h2><a href="{% url 'catalogo:lista' %}">Ver todos →</a></div>
+<div class="grid cols-3">
+  {% for s in servicios %}
+  <article class="card">
+    <span class="pill">{{ s.categoria }}</span>
+    <h3 style="margin-top:.5rem"><a href="{{ s.get_absolute_url }}" style="text-decoration:none">{{ s.nombre }}</a></h3>
+    <p class="muted">{{ s.resumen }}</p>
+    <a class="btn small" href="{{ s.get_absolute_url }}">Ver detalle</a>
+  </article>
+  {% empty %}<p class="muted">Pronto publicaremos nuestros servicios.</p>{% endfor %}
+</div>
+
+{% if productos %}
+<div class="section-title"><h2>Productos destacados</h2><a href="{% url 'tienda:lista' %}">Ver tienda →</a></div>
+<div class="grid cols-4">
+  {% for p in productos %}{% include "tienda/_tarjeta.html" %}{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

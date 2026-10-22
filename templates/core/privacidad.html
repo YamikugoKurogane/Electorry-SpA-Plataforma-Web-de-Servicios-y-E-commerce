@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Aviso de privacidad · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<article class="card medium stack">
+  <h1>Aviso de privacidad</h1>
+  <p class="muted small">Conforme a la normativa chilena de protección de datos personales (Ley N.º 21.719).</p>
+  <h2>Qué datos recopilamos</h2>
+  <p>Nombre, correo electrónico, teléfono, dirección del servicio o entrega, descripción de tu requerimiento y los archivos que decidas adjuntar. Los datos de tarjeta <strong>nunca</strong> pasan por nuestros sistemas: el pago lo procesa directamente la pasarela de pago.</p>
+  <h2>Para qué los usamos</h2>
+  <p>Para responder tus solicitudes de cotización, enviarte avisos sobre su estado, gestionar tus compras y mantener el historial de nuestra relación comercial. Solo recopilamos lo necesario para ello.</p>
+  <h2>Con quién los compartimos</h2>
+  <p>Solo con proveedores indispensables para operar (por ejemplo, la pasarela de pago y el servicio de correo). No vendemos tus datos.</p>
+  <h2>Tus derechos</h2>
+  <p>Puedes <strong>rectificar</strong> tus datos y <strong>eliminarlos</strong> en cualquier momento desde <em>Mi cuenta</em>. Al eliminar tu cuenta anonimizamos tus datos personales; conservamos únicamente información comercial sin datos que te identifiquen.</p>
+  <h2>Contacto</h2>
+  <p>Para cualquier consulta escríbenos a <a href="mailto:{{ EMPRESA.email }}">{{ EMPRESA.email }}</a>.</p>
+</article>
+{% endblock %}

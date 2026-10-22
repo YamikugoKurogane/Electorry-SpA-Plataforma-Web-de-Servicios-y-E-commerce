@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Acceso denegado · Electorry{% endblock %}
+{% block content %}
+<div class="card narrow" style="text-align:center;margin-top:2rem">
+  <p style="font-size:3rem;margin:0">⚡</p>
+  <h1>Acceso denegado</h1>
+  <p class="muted">No tienes permiso para ver esta página.</p>
+  <p><a class="btn" href="{% url 'core:inicio' %}">Volver al inicio</a></p>
+</div>
+{% endblock %}

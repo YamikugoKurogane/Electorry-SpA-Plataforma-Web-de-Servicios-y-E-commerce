@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block panel %}
+<h1>Auditoría</h1>
+<form class="filters" method="get">
+  <div><label for="q">Buscar</label><input id="q" name="q" value="{{ q }}" placeholder="Usuario o descripción"></div>
+  <div><label for="entidad">Entidad</label><select id="entidad" name="entidad"><option value="">Todas</option>{% for e in entidades %}<option value="{{ e }}" {% if entidad == e %}selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+  <div><label for="accion">Acción</label><select id="accion" name="accion"><option value="">Todas</option>{% for a in acciones %}<option value="{{ a }}" {% if accion == a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></div>
+  <div><label for="id">ID</label><input id="id" name="id" value="{{ id }}" inputmode="numeric"></div>
+  <div style="flex:0 0 auto"><button class="btn secondary" type="submit">Filtrar</button></div></form>
+<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalle</th></tr></thead><tbody>
+{% for r in pagina %}<tr><td class="small">{{ r.fecha|date:"d-m-Y H:i:s" }}</td><td>{{ r.usuario_email|default:"—" }}</td><td><span class="pill">{{ r.accion }}</span></td><td>{{ r.entidad }}{% if r.entidad_id %} #{{ r.entidad_id }}{% endif %}</td>
+<td>{{ r.descripcion }}{% if r.antes or r.despues %}<br><span class="muted small">{% if r.antes %}antes: {{ r.antes }} {% endif %}{% if r.despues %}→ {{ r.despues }}{% endif %}</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5" class="empty">Sin registros.</td></tr>{% endfor %}</tbody></table></div>
+{% include "partials/paginacion.html" %}
+{% endblock %}

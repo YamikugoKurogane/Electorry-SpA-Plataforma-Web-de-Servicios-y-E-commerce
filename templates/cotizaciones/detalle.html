@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}{{ cot.codigo }} · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<p class="small no-print"><a href="{% url 'solicitudes:detalle' cot.solicitud_id %}">← {{ cot.solicitud.codigo }}</a></p>
+<article class="card medium stack">
+  <div class="row between"><div><h1 style="margin:0">Cotización {{ cot.codigo }}</h1><span class="muted">{{ EMPRESA.nombre }} · {{ cot.creada|date:"d-m-Y" }}</span></div>
+    <span class="estado estado-{{ cot.estado|estado_css }}">{{ cot.get_estado_display }}</span></div>
+  <dl class="meta"><dt>Cliente</dt><dd>{{ cot.solicitud.nombre_contacto }}</dd><dt>Servicio</dt><dd>{{ cot.solicitud.servicio.nombre }}</dd>
+    <dt>Lugar</dt><dd>{{ cot.solicitud.direccion }}</dd>{% if cot.validez_hasta %}<dt>Válida hasta</dt><dd>{{ cot.validez_hasta|date:"d-m-Y" }}</dd>{% endif %}</dl>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Descripción</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Subtotal</th></tr></thead>
+    <tbody>{% for l in cot.lineas.all %}<tr><td>{{ l.descripcion }}</td><td class="num">{{ l.cantidad }}</td><td class="num">{{ l.precio_unitario|clp }}</td><td class="num">{{ l.subtotal|clp }}</td></tr>{% endfor %}</tbody>
+    <tfoot>
+      <tr><td colspan="3" class="num">Neto</td><td class="num">{{ cot.neto|clp }}</td></tr>
+      <tr><td colspan="3" class="num">IVA ({{ IVA }}%)</td><td class="num">{{ cot.iva|clp }}</td></tr>
+      <tr><td colspan="3" class="num"><strong>Total</strong></td><td class="num"><strong>{{ cot.total|clp }}</strong></td></tr>
+    </tfoot></table></div>
+  {% if cot.observaciones %}<div><h3>Observaciones</h3>{{ cot.observaciones|linebreaks }}</div>{% endif %}
+  <div class="row no-print">
+    <button class="btn ghost" type="button" onclick="window.print()">Imprimir / guardar PDF</button>
+    {% if user.es_personal and cot.estado == "BORRADOR" %}
+      <a class="btn secondary" href="{% url 'panel:cotizacion_editar' cot.pk %}">Editar</a>
+      <form method="post" action="{% url 'panel:cotizacion_enviar' cot.pk %}" data-once>{% csrf_token %}<button class="btn" type="submit">Enviar al cliente</button></form>
+    {% endif %}
+    {% if user.es_cliente and cot.estado == "ENVIADA" %}
+      <form method="post" action="{% url 'cotizaciones:responder' cot.pk %}" class="row" data-once>{% csrf_token %}
+        <button class="btn" name="accion" value="aceptar" type="submit">Aceptar</button><button class="btn ghost" name="accion" value="rechazar" type="submit">Rechazar</button></form>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}

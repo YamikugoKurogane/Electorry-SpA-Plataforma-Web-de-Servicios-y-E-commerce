@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}Pagar {{ venta.codigo }} · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow stack"><h1>Pagar {{ venta.codigo }}</h1>
+  <p>Total a pagar: <span class="price">{{ venta.total|clp }}</span></p>
+  <p class="muted small">Serás redirigido a la pasarela de pago. Tus datos de tarjeta nunca pasan por Electorry.</p>
+  <form method="post" data-once>{% csrf_token %}<button class="btn" type="submit">Ir a pagar</button></form></div>
+{% endblock %}

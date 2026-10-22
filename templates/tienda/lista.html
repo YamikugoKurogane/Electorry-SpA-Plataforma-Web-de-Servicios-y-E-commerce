@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Productos · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<h1>Productos</h1>
+<form class="filters" method="get">
+  <div><label for="q">Buscar</label><input id="q" name="q" value="{{ q }}" placeholder="Ej: cable, disyuntor, LED…"></div>
+  <div><label for="categoria">Categoría</label>
+    <select id="categoria" name="categoria"><option value="">Todas</option>{% for c in categorias %}<option value="{{ c.pk }}" {% if cat == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}</select></div>
+  <div style="flex:0 0 auto"><button class="btn secondary" type="submit">Filtrar</button></div>
+</form>
+<div class="grid cols-4">
+  {% for p in pagina %}{% include "tienda/_tarjeta.html" %}
+  {% empty %}<div class="card empty" style="grid-column:1/-1">No encontramos productos con esos filtros.</div>{% endfor %}
+</div>
+{% include "partials/paginacion.html" %}
+{% endblock %}

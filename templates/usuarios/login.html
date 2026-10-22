@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Ingresar · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Ingresar</h1>
+  <form method="post" class="form" novalidate>{% csrf_token %}
+    {% include "partials/form.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn" type="submit">Ingresar</button>
+  </form>
+  <p class="muted small" style="margin-top:1rem">¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear cuenta</a></p>
+</div>
+{% endblock %}
