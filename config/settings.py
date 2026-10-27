@@ -120,6 +120,7 @@ DATABASES = {
         env="DATABASE_URL",
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=60,
+        conn_health_checks=True,  # descarta conexiones caídas antes de usarlas
     )
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -25,3 +25,10 @@
 - p95 ≤ 2 s con 30 usuarios concurrentes: el diseño lo favorece (consultas constantes, paginación, índices; probado con `assertNumQueries`), pero **no se ejecutó una prueba de carga real**. Pendiente (p. ej. Locust) en staging.
 - Webpay sin probar contra Transbank (ver README).
 - Ley 21.719: se implementó aviso, consentimiento, rectificación y supresión; la revisión legal del texto del aviso queda a cargo de Electorry.
+
+## Hallazgos de la integración con PostgreSQL (S2-R1)
+- Las pruebas pasan sobre PostgreSQL 16.2 y SQLite. `verificar_bd` comprueba integridad y bloqueo de filas.
+- La búsqueda distinguía tildes en PostgreSQL («instalacion» no encontraba «Instalación»). Se corrigió con la extensión `unaccent`
+  (`apps/core/busqueda.py`). **Pendiente de verificar con la extensión real** en Docker (`postgres:16`); en desarrollo se validó la
+  forma de la consulta emulando la función.
+- SQLite no ignora mayúsculas en letras con tilde: solo afecta al desarrollo local.

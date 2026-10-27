@@ -35,7 +35,60 @@ python manage.py runserver
 ```
 Con PostgreSQL: define `DATABASE_URL=postgres://usuario:clave@localhost:5432/electorry`.
 
-Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (91 pruebas).
+Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (105 pruebas; algunas se omiten según el motor de base de datos).
+
+## Base de datos en desarrollo (PostgreSQL)
+
+Cada integrante usa **su propia base local**. No compartan una base entre personas: se pisarían datos y migraciones.
+
+```powershell
+# 1. Levantar PostgreSQL 16 (requiere Docker Desktop)
+docker compose -f docker-compose.dev.yml up -d
+docker ps                               # electorry-db debe aparecer como "healthy"
+
+# 2. Configurar el proyecto (el .env.example ya trae DATABASE_URL apuntando a esta base)
+copy .env.example .env
+
+# 3. Crear tablas y datos de demostración
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_demo              # guarda las contraseñas que imprime
+python manage.py makemigrations --check --dry-run    # debe decir "No changes detected"
+
+# 4. Verificar que realmente usa PostgreSQL y que la base rechaza datos inválidos
+python manage.py verificar_bd --exigir-postgres
+
+# 5. Correr las pruebas
+$env:DJANGO_TESTING="1"; python manage.py test tests
+```
+
+`verificar_bd` comprueba el motor, la versión, la codificación, las migraciones y que la base **rechaza** datos
+inválidos (correo duplicado, cantidades en 0, token de pago repetido, borrar registros en uso, bloqueo de filas).
+No deja datos en la base. Salida esperada: todas las líneas en `[OK]` y «Base de datos verificada correctamente».
+
+**Empezar de cero:** `docker compose -f docker-compose.dev.yml down -v` y repetir desde el paso 1.
+**Ver las tablas:** `docker exec -it electorry-db psql -U electorry -d electorry -c "\dt"`
+
+| Síntoma | Causa probable |
+|---|---|
+| `connection refused` | El contenedor no corre, o otro PostgreSQL ya usa el puerto 5432 (cámbialo a `5433:5432` y ajusta `DATABASE_URL`) |
+| `password authentication failed` | Contraseña distinta, o caracteres especiales sin codificar en `DATABASE_URL` |
+| Sigue usando SQLite | El `.env` no está junto a `manage.py` o `DATABASE_URL` está comentada (`verificar_bd` lo avisa) |
+| Falla solo en las pruebas | Diferencia real entre SQLite y PostgreSQL: repórtala, no ajustes la prueba para esconderla |
+
+## Cargar el contenido real (servicios y productos)
+
+Las planillas están en `contenido/` (ver `contenido/LEEME.md`). Se llenan con Excel y se cargan con un comando repetible:
+
+```powershell
+python manage.py importar_contenido contenido --simular   # valida y muestra qué haría, sin guardar
+python manage.py importar_contenido contenido             # guarda
+```
+Si una fila tiene errores no se guarda nada y se listan con su número de línea. Si el nombre ya existe, se actualiza (no duplica).
+
+**Búsqueda sin tildes:** en PostgreSQL, la migración `core.0001` activa la extensión `unaccent` para que «instalacion» encuentre
+«Instalación». En la imagen `postgres:16` de Docker está disponible. Si el servidor no la tiene, la migración no falla y la
+búsqueda sigue funcionando, solo que distinguiendo tildes.
 
 ## Roles y permisos
 

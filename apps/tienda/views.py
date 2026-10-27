@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.core.busqueda import filtrar_texto
 from apps.core.permisos import SOLO_CLIENTE, TODOS_AUTENTICADOS, rol_requerido
 
 from . import services
@@ -16,8 +16,7 @@ def lista(request):
     qs = Producto.objects.select_related("categoria").filter(activo=True, categoria__activa=True)
     q = request.GET.get("q", "").strip()
     cat = request.GET.get("categoria", "")
-    if q:
-        qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
+    qs = filtrar_texto(qs, ("nombre", "descripcion"), q)
     if cat.isdigit():
         qs = qs.filter(categoria_id=int(cat))
     pagina = Paginator(qs, 12).get_page(request.GET.get("pagina"))

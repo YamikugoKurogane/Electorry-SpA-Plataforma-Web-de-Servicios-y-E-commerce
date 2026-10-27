@@ -154,3 +154,33 @@ class ReportesTests(BaseTest):
     def test_reportes_solo_admin(self):
         self.login(self.interno)
         self.assertEqual(self.client.get(reverse("panel:reportes")).status_code, 403)
+
+
+class VerificarBdTests(BaseTest):
+    def test_comando_verificar_bd_pasa(self):
+        from io import StringIO
+        from django.core.management import call_command
+        out = StringIO()
+        call_command("verificar_bd", stdout=out)
+        self.assertIn("Base de datos verificada correctamente", out.getvalue())
+        self.assertNotIn("FALLA", out.getvalue())
+
+
+class BusquedaSinTildesTests(BaseTest):
+    def test_busqueda_con_tilde_y_mayusculas(self):
+        from django.db import connection
+        if connection.vendor == "sqlite":
+            self.skipTest("SQLite no ignora mayúsculas en letras con tilde (solo afecta al desarrollo local)")
+        r = self.client.get(reverse("catalogo:lista"), {"q": "INSTALACIÓN"})
+        self.assertEqual(len(r.context["pagina"]), 1)
+
+    def test_busqueda_sin_tilde_en_postgresql(self):  # RF-12
+        from django.db import connection
+        from django.apps import apps
+        from apps.core.busqueda import _hay_unaccent
+        if connection.vendor != "postgresql" or not _hay_unaccent():
+            self.skipTest("Requiere PostgreSQL con la extensión unaccent")
+        r = self.client.get(reverse("catalogo:lista"), {"q": "instalacion"})
+        self.assertEqual(len(r.context["pagina"]), 1)
+        r = self.client.get(reverse("tienda:lista"), {"q": "DISYUNTOR"})
+        self.assertEqual(len(r.context["pagina"]), 1)

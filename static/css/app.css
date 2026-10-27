@@ -25,7 +25,7 @@ h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); } h2 { font-size: 1.35rem; } h3 { fo
 .site-header { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 20; }
 .site-header a { color: #fff; text-decoration: none; }
 .site-header .bar { display: flex; align-items: center; gap: 1rem; min-height: 60px; }
-#barra-navegacion { background-color: #13315c;}
+#barra-navegacion{ background-color:#13315c}
 .brand { font-weight: 800; font-size: 1.25rem; letter-spacing: .3px; display: flex; align-items: center; gap: .4rem; }
 .brand .bolt { color: var(--amber); }
 .nav { display: flex; gap: .25rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
@@ -60,6 +60,7 @@ main { padding: 1.5rem 0 3rem; min-height: 60vh; }
 .btn.secondary { background: var(--navy); color: #fff; } .btn.secondary:hover { background: var(--navy-2); color: #fff; }
 .btn.ghost { background: transparent; color: var(--navy); border: 1px solid var(--line); } .btn.ghost:hover { background: #eef2f7; }
 .btn.danger { background: var(--err); color: #fff; } .btn.danger:hover { background: #991b1b; color: #fff; }
+.btn.is-busy { opacity: .6; pointer-events: none; }
 .btn.small { padding: .35rem .7rem; font-size: .82rem; }
 .btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 

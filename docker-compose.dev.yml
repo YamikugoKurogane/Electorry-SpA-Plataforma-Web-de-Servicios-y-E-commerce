@@ -1,0 +1,22 @@
+# Solo la base de datos para DESARROLLO LOCAL. Cada integrante levanta la suya.
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down        (apaga, conserva los datos)
+#   docker compose -f docker-compose.dev.yml down -v     (apaga y BORRA los datos)
+services:
+  db:
+    image: postgres:16
+    container_name: electorry-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: electorry
+      POSTGRES_USER: electorry
+      POSTGRES_PASSWORD: clave_local_123
+    ports: ["5432:5432"]
+    volumes: [electorry_pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U electorry -d electorry"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  electorry_pgdata:

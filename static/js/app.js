@@ -17,9 +17,20 @@
     });
   });
   // 2) Evitar doble envío de formularios.
+  //    IMPORTANTE: no se deshabilita ningún botón. Un botón deshabilitado NO envía su name/value,
+  //    y formularios como «Aceptar / Rechazar cotización» dependen de ese valor.
   document.querySelectorAll("form[data-once]").forEach(function (f) {
-    f.addEventListener("submit", function () {
-      var b = f.querySelector("button[type=submit]"); if (b) { b.disabled = true; b.textContent = "Procesando…"; }
+    f.addEventListener("submit", function (e) {
+      if (f.dataset.enviando) { e.preventDefault(); return; }
+      f.dataset.enviando = "1";
+      f.querySelectorAll("button[type=submit]").forEach(function (b) { b.classList.add("is-busy"); });
+    });
+  });
+  // Al volver con el botón «Atrás» el navegador restaura la página: se libera el formulario.
+  window.addEventListener("pageshow", function () {
+    document.querySelectorAll("form[data-once]").forEach(function (f) {
+      delete f.dataset.enviando;
+      f.querySelectorAll("button[type=submit]").forEach(function (b) { b.classList.remove("is-busy"); });
     });
   });
   // 3) Agregar líneas a un formset (cotizaciones).
