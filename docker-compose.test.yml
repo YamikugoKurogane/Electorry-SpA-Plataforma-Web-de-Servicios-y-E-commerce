@@ -1,0 +1,27 @@
+services: 
+  db: 
+    image: postgres:16 
+    container_name: electorry-db 
+    environment: 
+      POSTGRES_DB: electorry 
+      POSTGRES_USER: electorry 
+      POSTGRES_PASSWORD: clave_local_123 
+    ports: 
+      - "5432:5432" 
+    volumes: 
+      - pgdata:/var/lib/postgresql/data 
+  web: 
+    build: . 
+    container_name: electorry-web 
+    command: python manage.py runserver 0.0.0.0:8000 
+    volumes: 
+      - .:/app 
+    ports: 
+      - "8000:8000" 
+    environment: 
+      - DJANGO_DEBUG=1 
+      - DATABASE_URL=postgres://electorry:clave_local_123@db:5432/electorry 
+    depends_on: 
+      - db 
+volumes: 
+  pgdata:

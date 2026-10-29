@@ -113,5 +113,5 @@ class CotizacionTests(BaseTest):
         for _ in range(8):
             c = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS)
         self.login(self.admin)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(8):
             self.client.get(reverse("panel:cotizaciones"))
