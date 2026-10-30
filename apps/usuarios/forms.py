@@ -11,11 +11,53 @@ from . import services
 from .models import Rol, Usuario
 
 TELEFONO_RE = re.compile(r"^\+?[0-9 ()-]{8,20}$")
+RUT_RE = re.compile(r"^\d{1,8}(?:\.\d{3})*-?[0-9Kk]$")
 
 
 def validar_telefono(valor):
     if valor and not TELEFONO_RE.match(valor):
         raise ValidationError("Ingresa un teléfono válido, por ejemplo +56 9 1234 5678.")
+    return valor
+
+
+def limpiar_rut(valor):
+    if not valor:
+        return ""
+    texto = str(valor).strip().upper().replace(".", "").replace(" ", "")
+    if not texto:
+        return ""
+    if "-" in texto:
+        numero, dv = texto.rsplit("-", 1)
+    else:
+        numero, dv = texto[:-1], texto[-1]
+    if not numero or not numero.isdigit() or len(numero) > 8:
+        raise ValidationError("RUT inválido. Debe tener formato 11.111.111-1.")
+    if dv not in "0123456789K":
+        raise ValidationError("RUT inválido. Debe incluir el dígito verificador correcto.")
+    suma = 0
+    multiplicador = 2
+    for digito in reversed(numero):
+        suma += int(digito) * multiplicador
+        multiplicador += 1
+        if multiplicador == 8:
+            multiplicador = 2
+    resto = suma % 11
+    dv_calculado = 11 - resto
+    if dv_calculado == 11:
+        dv_calculado = "0"
+    elif dv_calculado == 10:
+        dv_calculado = "K"
+    else:
+        dv_calculado = str(dv_calculado)
+    if dv != dv_calculado:
+        raise ValidationError("RUT inválido: el dígito verificador no coincide.")
+    numero_formateado = f"{int(numero):,}".replace(",", ".")
+    return f"{numero_formateado}-{dv_calculado}"
+
+
+def validar_rut(valor):
+    if valor:
+        return limpiar_rut(valor)
     return valor
 
 
@@ -33,17 +75,25 @@ class RegistroForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ["first_name", "last_name", "email", "telefono"]
-        labels = {"first_name": "Nombre", "last_name": "Apellido", "email": "Correo electrónico", "telefono": "Teléfono"}
+        fields = ["first_name", "last_name", "email", "rut", "telefono"]
+        labels = {"first_name": "Nombre", "last_name": "Apellido", "email": "Correo electrónico", "rut": "RUT", "telefono": "Teléfono"}
         error_messages = {"email": {"unique": "Ya existe una cuenta con este correo."}}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for nombre in ("first_name", "last_name", "email"):
             self.fields[nombre].required = True
+        self.fields["rut"].required = False
         self.fields["telefono"].required = True
+        self.fields["rut"].validators.append(validar_rut)
         self.fields["telefono"].validators.append(validar_telefono)
         self.fields["email"].widget.attrs["autocomplete"] = "email"
+
+    def clean_rut(self):
+        rut = self.cleaned_data.get("rut")
+        if rut:
+            return limpiar_rut(rut)
+        return rut
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
@@ -70,7 +120,7 @@ class RegistroForm(forms.ModelForm):
         d = self.cleaned_data
         return services.registrar_cliente(
             email=d["email"], password=d["password1"], first_name=d["first_name"], last_name=d["last_name"],
-            telefono=d["telefono"], acepta_privacidad=d["acepta_privacidad"], request=request,
+            rut=d.get("rut", ""), telefono=d["telefono"], acepta_privacidad=d["acepta_privacidad"], request=request,
         )
 
 
@@ -105,14 +155,22 @@ class PerfilForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ["first_name", "last_name", "telefono"]
-        labels = {"first_name": "Nombre", "last_name": "Apellido", "telefono": "Teléfono"}
+        fields = ["first_name", "last_name", "rut", "telefono"]
+        labels = {"first_name": "Nombre", "last_name": "Apellido", "rut": "RUT", "telefono": "Teléfono"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["first_name"].required = True
         self.fields["last_name"].required = True
+        self.fields["rut"].required = False
+        self.fields["rut"].validators.append(validar_rut)
         self.fields["telefono"].validators.append(validar_telefono)
+
+    def clean_rut(self):
+        rut = self.cleaned_data.get("rut")
+        if rut:
+            return limpiar_rut(rut)
+        return rut
 
 
 class EliminarCuentaForm(forms.Form):
@@ -138,8 +196,13 @@ class UsuarioPersonalForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ["first_name", "last_name", "email", "telefono", "rol", "is_active"]
-        labels = {"first_name": "Nombre", "last_name": "Apellido", "email": "Correo electrónico", "telefono": "Teléfono", "rol": "Rol", "is_active": "Activo"}
+        fields = ["first_name", "last_name", "email", "rut", "telefono", "rol", "is_active"]
+        labels = {"first_name": "Nombre", "last_name": "Apellido", "email": "Correo electrónico", "rut": "RUT", "telefono": "Teléfono", "rol": "Rol", "is_active": "Activo"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["rut"].required = False
+        self.fields["rut"].validators.append(validar_rut)
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
@@ -147,6 +210,12 @@ class UsuarioPersonalForm(forms.ModelForm):
         if qs.exists():
             raise ValidationError("Ya existe un usuario con este correo.")
         return email
+
+    def clean_rut(self):
+        rut = self.cleaned_data.get("rut")
+        if rut:
+            return limpiar_rut(rut)
+        return rut
 
     def clean(self):
         datos = super().clean()

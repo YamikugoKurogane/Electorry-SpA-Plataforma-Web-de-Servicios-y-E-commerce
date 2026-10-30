@@ -20,6 +20,10 @@ def privacidad(request):
     return render(request, "core/privacidad.html")
 
 
+def terminos_venta(request):
+    return render(request, "core/terminos_venta.html")
+
+
 def salud(request):
     """Healthcheck para monitoreo y reinicio automático (R1)."""
     try:

@@ -2,6 +2,7 @@ from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
 
+from apps.usuarios.forms import RegistroForm
 from apps.usuarios.models import IntentoLogin, Usuario
 
 from .base import PW, BaseTest
@@ -10,7 +11,7 @@ from .base import PW, BaseTest
 class RegistroLoginTests(BaseTest):
     def datos(self, **kw):
         d = {"first_name": "Nuevo", "last_name": "Cliente", "email": "nuevo@t.cl", "telefono": "+56 9 8888 7777",
-             "password1": PW, "password2": PW, "acepta_privacidad": "on"}
+             "rut": "18.123.456-3", "password1": PW, "password2": PW, "acepta_privacidad": "on"}
         d.update(kw)
         return d
 
@@ -35,6 +36,17 @@ class RegistroLoginTests(BaseTest):
     def test_contrasena_debil_rechazada(self):
         r = self.client.post(reverse("usuarios:registro"), self.datos(password1="12345678", password2="12345678"))
         self.assertFalse(Usuario.objects.filter(email="nuevo@t.cl").exists())
+
+    def test_rut_invalido_rechazado(self):
+        r = self.client.post(reverse("usuarios:registro"), self.datos(rut="11.111.111-0"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "RUT")
+        self.assertContains(r, "inválido")
+
+    def test_rut_valido_se_guarda_normalizado(self):
+        form = RegistroForm(data=self.datos())
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["rut"], "18.123.456-3")
 
     def test_login_correcto_e_incorrecto(self):
         r = self.client.post(reverse("usuarios:login"), {"username": "c1@t.cl", "password": PW})
@@ -63,6 +75,11 @@ class RegistroLoginTests(BaseTest):
 
 
 class PrivacidadTests(BaseTest):
+    def test_privacidad_y_terminos_de_venta_disponibles(self):
+        self.assertEqual(self.client.get(reverse("core:privacidad")).status_code, 200)
+        self.assertContains(self.client.get(reverse("core:terminos_venta")), "Ley N.º 19.628")
+        self.assertContains(self.client.get(reverse("core:terminos_venta")), "Términos de venta")
+
     def test_rectificar_datos(self):  # RNF-SEG-07
         self.login(self.cliente)
         self.client.post(reverse("usuarios:perfil"), {"perfil-first_name": "Carlita", "perfil-last_name": "Uno", "perfil-telefono": "+56 9 1111 1111"})
