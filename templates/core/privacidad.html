@@ -3,16 +3,19 @@
 {% block content %}
 <article class="card medium stack">
   <h1>Aviso de privacidad</h1>
-  <p class="muted small">Conforme a la normativa chilena de protección de datos personales (Ley N.º 21.719).</p>
-  <h2>Qué datos recopilamos</h2>
-  <p>Nombre, correo electrónico, teléfono, dirección del servicio o entrega, descripción de tu requerimiento y los archivos que decidas adjuntar. Los datos de tarjeta <strong>nunca</strong> pasan por nuestros sistemas: el pago lo procesa directamente la pasarela de pago.</p>
-  <h2>Para qué los usamos</h2>
-  <p>Para responder tus solicitudes de cotización, enviarte avisos sobre su estado, gestionar tus compras y mantener el historial de nuestra relación comercial. Solo recopilamos lo necesario para ello.</p>
-  <h2>Con quién los compartimos</h2>
-  <p>Solo con proveedores indispensables para operar (por ejemplo, la pasarela de pago y el servicio de correo). No vendemos tus datos.</p>
-  <h2>Tus derechos</h2>
-  <p>Puedes <strong>rectificar</strong> tus datos y <strong>eliminarlos</strong> en cualquier momento desde <em>Mi cuenta</em>. Al eliminar tu cuenta anonimizamos tus datos personales; conservamos únicamente información comercial sin datos que te identifiquen.</p>
-  <h2>Contacto</h2>
-  <p>Para cualquier consulta escríbenos a <a href="mailto:{{ EMPRESA.email }}">{{ EMPRESA.email }}</a>.</p>
+  <p class="muted small">Conforme a la Ley N.º 19.628 sobre Protección de la Vida Privada y a la Ley N.º 21.719, con sus normas complementarias.</p>
+  <p>Electorry SpA, RUT ... , con domicilio en ..., informa que tratará los datos personales que le entregues al registrarte, comprar, cotizar o contactarnos, con el propósito de atender tu solicitud, gestionar pedidos y servicios, informar sobre su estado, cumplir obligaciones legales y mantener la relación comercial.</p>
+  <h2>1. Datos que recopilamos</h2>
+  <p>Podemos recopilar nombre, apellido, correo electrónico, teléfono, dirección, comuna, RUT cuando sea necesario para la operación o la facturación, descripción de tus requerimientos, datos de pago y archivos adjuntos que decidas compartir. Los datos de tarjeta no se almacenan en nuestros sistemas; la pasarela de pago los procesa directamente.</p>
+  <h2>2. Finalidades del tratamiento</h2>
+  <p>Usaremos tus datos para: (a) identificarte y gestionar tu cuenta; (b) atender servicios, cotizaciones, compras y entregas; (c) ejecutar la relación contractual; (d) responder consultas y reclamos; (e) cumplir con obligaciones legales, tributarias y regulatorias; (f) mejorar la calidad de nuestros servicios; y (g) enviar comunicaciones comerciales relacionadas con la operación, siempre que hayas consentido o exista una base legal para hacerlo.</p>
+  <h2>3. Transferencias y terceros</h2>
+  <p>Solo compartiremos datos con proveedores y servicios esenciales para operar y cumplir con la prestación, como pasarelas de pago, entrega, logística, correo electrónico y servicios de soporte tecnológico. No venderemos ni comercializaremos tus datos personales.</p>
+  <h2>4. Derechos del titular</h2>
+  <p>De acuerdo con la Ley 19.628 y la Ley 21.719, puedes ejercer tus derechos de acceso, rectificación, actualización, cancelación, oposición, supresión y limitación del tratamiento. Para ello puedes contactarnos a través de <a href="mailto:{{ EMPRESA.email }}">{{ EMPRESA.email }}</a> o desde <em>Mi cuenta</em>. Si decides eliminar tu cuenta, anonimizaremos tus datos personales y conservaremos únicamente la información necesaria para el cumplimiento de obligaciones legales y el historial comercial sin identificadores personales.</p>
+  <h2>5. Consentimiento y vigencia</h2>
+  <p>Al registrarte y aceptar este aviso, consientes el tratamiento de tus datos personales para las finalidades indicadas. El tratamiento se mantendrá mientras exista una relación comercial, una obligación legal o un interés legítimo compatible, y mientras no ejerzas tus derechos de oposición o eliminación conforme a la ley.</p>
+  <h2>6. Contacto</h2>
+  <p>Para consultas, reclamos o ejercicio de derechos, escríbenos a <a href="mailto:{{ EMPRESA.email }}">{{ EMPRESA.email }}</a> o revisa nuestro <a href="{% url 'core:terminos_venta' %}">términos de venta</a>.</p>
 </article>
 {% endblock %}

@@ -38,12 +38,13 @@ def registrar_intento(email, ip, exitoso):
 
 
 @transaction.atomic
-def registrar_cliente(*, email, password, first_name, last_name, telefono="", acepta_privacidad, request=None):
+def registrar_cliente(*, email, password, first_name, last_name, rut="", telefono="", acepta_privacidad, request=None):
     usuario = Usuario.objects.create_user(
         email=email,
         password=password,
         first_name=first_name,
         last_name=last_name,
+        rut=rut,
         telefono=telefono,
         acepta_privacidad=acepta_privacidad,
         rol=Rol.CLIENTE,

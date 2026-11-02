@@ -39,6 +39,7 @@ class Usuario(AbstractUser):
 
     username = None
     email = models.EmailField("correo electrónico", unique=True)
+    rut = models.CharField("RUT", max_length=12, blank=True, default="")
     telefono = models.CharField("teléfono", max_length=20, blank=True)
     rol = models.CharField(max_length=10, choices=Rol.choices, default=Rol.CLIENTE, db_index=True)
     acepta_privacidad = models.BooleanField("acepta aviso de privacidad", default=False)

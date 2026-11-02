@@ -42,7 +42,7 @@
   <div class="container footer-grid">
     <div><strong style="color:#fff">⚡ {{ EMPRESA.nombre }}</strong><br>{{ EMPRESA.eslogan }}</div>
     <div>Contacto<br><a href="mailto:{{ EMPRESA.email }}">{{ EMPRESA.email }}</a><br>{{ EMPRESA.telefono }}<br>{{ EMPRESA.direccion }}</div>
-    <div><a href="{% url 'core:privacidad' %}">Aviso de privacidad</a><br><a href="{% url 'catalogo:lista' %}">Servicios</a><br><a href="{% url 'tienda:lista' %}">Productos</a></div>
+    <div><a href="{% url 'core:privacidad' %}">Aviso de privacidad</a><br><a href="{% url 'core:terminos_venta' %}">Términos de venta</a><br><a href="{% url 'catalogo:lista' %}">Servicios</a><br><a href="{% url 'tienda:lista' %}">Productos</a></div>
   </div>
 </footer>
 {% if EMPRESA.whatsapp %}<a class="wa no-print" href="https://wa.me/{{ EMPRESA.whatsapp }}" rel="noopener" target="_blank">💬 WhatsApp</a>{% endif %}
