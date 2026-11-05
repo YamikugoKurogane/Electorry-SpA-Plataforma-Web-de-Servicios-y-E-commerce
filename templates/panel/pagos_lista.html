@@ -1,0 +1,26 @@
+{% extends "panel/base.html" %}{% load electorry %}
+{% block panel %}
+<div class="row between"><h1>Pagos</h1>
+  <a class="btn ghost" href="?{% qs_sin_pagina exportar='csv' %}">Exportar CSV</a></div>
+<form class="filters" method="get">
+  <div><label for="q">Buscar</label><input id="q" name="q" value="{{ q }}" placeholder="Cliente, correo, VTA-00001, referencia"></div>
+  <div><label for="estado">Estado</label><select id="estado" name="estado"><option value="">Todos</option>{% for v, l in estados %}<option value="{{ v }}" {% if estado == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div><label for="proveedor">Medio</label><select id="proveedor" name="proveedor"><option value="">Todos</option>{% for p in proveedores %}<option value="{{ p }}" {% if proveedor == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+  <div><label for="desde">Desde</label><input id="desde" type="date" name="desde" value="{{ desde }}"></div>
+  <div><label for="hasta">Hasta</label><input id="hasta" type="date" name="hasta" value="{{ hasta }}"></div>
+  <div style="flex:0 0 auto"><button class="btn secondary" type="submit">Filtrar</button> <a class="btn ghost" href="{% url 'panel:pagos' %}">Limpiar</a></div>
+</form>
+<div class="grid cols-4">
+  <div class="card stat"><div class="n">{{ monto_aprobado|clp }}</div><span class="muted small">Cobrado (pagos aprobados)</span></div>
+  <div class="card stat"><div class="n">{{ total }}</div><span class="muted small">Pagos en el filtro</span></div>
+  {% for etiqueta, n, valor in resumen %}{% if n %}<div class="card stat"><div class="n">{{ n }}</div><span class="estado estado-{{ valor|estado_css }}">{{ etiqueta }}</span></div>{% endif %}{% endfor %}
+</div>
+<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Venta</th><th>Cliente</th><th>Medio</th><th class="num">Monto</th><th>Estado</th><th>Referencia</th></tr></thead><tbody>
+{% for p in pagina %}<tr><td class="small">{{ p.creado|date:"d-m-Y H:i" }}</td>
+  <td><a href="{% url 'panel:venta_detalle' p.venta_id %}"><strong>{{ p.venta.codigo }}</strong></a></td>
+  <td>{{ p.venta.nombre_cliente|default:p.venta.cliente.email }}<br><span class="muted small">{{ p.venta.cliente.email }}</span></td>
+  <td>{{ p.proveedor }}</td><td class="num">{{ p.monto|clp }}</td>
+  <td><span class="estado estado-{{ p.estado|estado_css }}">{{ p.get_estado_display }}</span></td><td class="small">{{ p.referencia|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="7" class="empty">No hay pagos con esos filtros.</td></tr>{% endfor %}</tbody></table></div>
+{% include "partials/paginacion.html" %}
+{% endblock %}
