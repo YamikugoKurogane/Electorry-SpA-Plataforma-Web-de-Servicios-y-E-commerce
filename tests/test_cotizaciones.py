@@ -60,6 +60,22 @@ class CotizacionTests(BaseTest):
         self.sol.refresh_from_db()
         self.assertEqual(self.sol.estado, Estado.ACEPTADA)
 
+    def test_sin_accion_no_rechaza_ni_acepta(self):  # regresión: un envío sin «accion» rechazaba la cotización
+        c = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS)
+        services.enviar_cotizacion(c, self.admin)
+        self.login(self.cliente)
+        for datos in ({}, {"accion": ""}, {"accion": "borrar"}):
+            self.client.post(reverse("cotizaciones:responder", args=[c.pk]), datos)
+        c.refresh_from_db()
+        self.sol.refresh_from_db()
+        self.assertEqual(c.estado, EstadoCotizacion.ENVIADA)
+        self.assertEqual(self.sol.estado, Estado.COTIZADA)
+
+    def test_botones_de_respuesta_no_se_deshabilitan_por_js(self):  # regresión del script data-once
+        from pathlib import Path
+        js = (Path(__file__).resolve().parent.parent / "static" / "js" / "app.js").read_text(encoding="utf-8")
+        self.assertNotIn(".disabled = true", js)
+
     def test_cliente_rechaza_vuelve_a_revision(self):
         c = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS)
         services.enviar_cotizacion(c, self.admin)
@@ -113,5 +129,56 @@ class CotizacionTests(BaseTest):
         for _ in range(8):
             c = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS)
         self.login(self.admin)
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(5):
             self.client.get(reverse("panel:cotizaciones"))
+
+
+class CotizacionDeProductosTests(BaseTest):
+    """S3-R1: la cotización parte de los productos que pidió el cliente."""
+
+    def setUp(self):
+        from apps.solicitudes import services as sol
+        self.sol = sol.crear_solicitud(
+            cliente=self.cliente, servicio=None, datos={**self.datos_solicitud(), "servicio": None},
+            items=[(self.producto, 3), (self.producto2, 1)])
+
+    def test_lineas_sugeridas_con_precio_neto(self):
+        lineas = services.lineas_sugeridas(self.sol)
+        self.assertEqual([(l["descripcion"], l["cantidad"]) for l in lineas], [("Disyuntor 20A", 3), ("Diferencial", 1)])
+        self.assertEqual(lineas[0]["precio_unitario"], 5882)   # 7.000 / 1,19
+        self.assertEqual(lineas[1]["precio_unitario"], 21008)  # 25.000 / 1,19
+
+    def test_formulario_nuevo_trae_lineas_precargadas(self):
+        self.login(self.admin)
+        r = self.client.get(reverse("panel:cotizacion_crear", args=[self.sol.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Precargamos los productos")
+        self.assertContains(r, "Disyuntor 20A")
+        self.assertEqual(r.context["formset"].forms[0].initial["cantidad"], 3)
+
+    def test_formulario_de_solicitud_solo_servicio_no_precarga(self):
+        sol = self.crear_solicitud(self.cliente2)
+        self.login(self.admin)
+        r = self.client.get(reverse("panel:cotizacion_crear", args=[sol.pk]))
+        self.assertNotContains(r, "Precargamos los productos")
+
+    def test_se_puede_cotizar_y_enviar_una_solicitud_de_productos(self):
+        lineas = services.lineas_sugeridas(self.sol)
+        c = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=lineas)
+        services.enviar_cotizacion(c, self.admin)
+        self.sol.refresh_from_db()
+        self.assertEqual(self.sol.estado, Estado.COTIZADA)
+        self.login(self.cliente)
+        self.assertContains(self.client.get(reverse("cotizaciones:detalle", args=[c.pk])), "Productos: Disyuntor 20A")
+
+    def test_reporte_productos_mas_cotizados_y_csv(self):
+        from apps.reportes import services as rep
+        from django.utils import timezone
+        d, h, ini, fin = rep.rango_fechas(timezone.localdate(), timezone.localdate())
+        r = rep.resumen_solicitudes(ini, fin)
+        self.assertEqual(r["por_producto"][0], ("Disyuntor 20A", 3, 1))
+        self.assertEqual(r["por_servicio"][0][0], "(Solo productos)")
+        from io import StringIO
+        out = StringIO()
+        rep.csv_solicitudes(ini, fin, out)
+        self.assertIn("3 x Disyuntor 20A; 1 x Diferencial", out.getvalue())

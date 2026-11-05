@@ -8,8 +8,9 @@ from django.db.models import Count, F, Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
+from apps.core.utils import csv_seguro
 from apps.cotizaciones.models import Cotizacion, EstadoCotizacion
-from apps.solicitudes.models import Estado, SolicitudCotizacion
+from apps.solicitudes.models import Estado, ItemSolicitud, SolicitudCotizacion
 from apps.tienda.models import EstadoVenta, Venta
 
 
@@ -35,11 +36,17 @@ def resumen_solicitudes(inicio, fin):
     for fila in qs.values("estado").annotate(n=Count("id")):
         por_estado[fila["estado"]] = fila["n"]
     por_servicio = list(qs.values("servicio__nombre").annotate(n=Count("id")).order_by("-n", "servicio__nombre")[:10])
+    por_producto = list(
+        ItemSolicitud.objects.filter(solicitud__creada__gte=inicio, solicitud__creada__lt=fin)
+        .values("nombre_producto").annotate(unidades=Sum("cantidad"), solicitudes=Count("solicitud", distinct=True))
+        .order_by("-unidades", "nombre_producto")[:10]
+    )
     por_mes = list(qs.annotate(mes=TruncMonth("creada")).values("mes").annotate(n=Count("id")).order_by("mes"))
     return {
         "total": sum(por_estado.values()),
         "por_estado": [(Estado(e).label, n) for e, n in por_estado.items()],
-        "por_servicio": [(f["servicio__nombre"], f["n"]) for f in por_servicio],
+        "por_servicio": [(f["servicio__nombre"] or "(Solo productos)", f["n"]) for f in por_servicio],
+        "por_producto": [(f["nombre_producto"], f["unidades"], f["solicitudes"]) for f in por_producto],
         "por_mes": [(f["mes"].strftime("%Y-%m"), f["n"]) for f in por_mes],
     }
 
@@ -74,9 +81,13 @@ def resumen_ventas(inicio, fin):
 
 def csv_solicitudes(inicio, fin, escritor):
     w = csv.writer(escritor)
-    w.writerow(["codigo", "fecha", "cliente", "servicio", "estado", "direccion"])
-    for s in SolicitudCotizacion.objects.filter(creada__gte=inicio, creada__lt=fin).select_related("cliente", "servicio").iterator():
-        w.writerow([s.codigo, timezone.localtime(s.creada).strftime("%Y-%m-%d %H:%M"), s.nombre_contacto, s.servicio.nombre, s.get_estado_display(), s.direccion])
+    w.writerow(["codigo", "fecha", "cliente", "tipo", "servicio", "productos", "estado", "direccion"])
+    qs = SolicitudCotizacion.objects.filter(creada__gte=inicio, creada__lt=fin).select_related("cliente", "servicio").prefetch_related("items")
+    for s in qs.iterator(chunk_size=200):
+        productos = "; ".join(f"{i.cantidad} x {i.nombre_producto}" for i in s.items.all())
+        w.writerow([csv_seguro(x) for x in (
+            s.codigo, timezone.localtime(s.creada).strftime("%Y-%m-%d %H:%M"), s.nombre_contacto, s.tipo,
+            s.servicio.nombre if s.servicio_id else "", productos, s.get_estado_display(), s.direccion)])
 
 
 def csv_cotizaciones(inicio, fin, escritor):

@@ -33,6 +33,10 @@ class LineaForm(forms.ModelForm):
         return c
 
 
-LineaFormSet = forms.inlineformset_factory(
-    Cotizacion, LineaCotizacion, form=LineaForm, extra=1, can_delete=True, min_num=1, validate_min=True
-)
+def linea_formset(extra=1):
+    return forms.inlineformset_factory(
+        Cotizacion, LineaCotizacion, form=LineaForm, extra=extra, can_delete=True, min_num=1, validate_min=True
+    )
+
+
+LineaFormSet = linea_formset()

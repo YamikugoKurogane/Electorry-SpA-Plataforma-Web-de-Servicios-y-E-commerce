@@ -3,12 +3,12 @@ from django.urls import path
 from apps.reportes import views as reportes
 
 from . import views as v
+from . import views_pagos
 
 app_name = "panel"
 
 urlpatterns = [
     path("", v.dashboard, name="dashboard"),
-    path("configuracion/", v.configuracion_sitio, name="configuracion"),
     # solicitudes
     path("solicitudes/", v.solicitudes_lista, name="solicitudes"),
     path("solicitudes/<int:pk>/", v.solicitud_detalle, name="solicitud_detalle"),
@@ -43,6 +43,7 @@ urlpatterns = [
     path("ventas/", v.ventas_lista, name="ventas"),
     path("ventas/<int:pk>/", v.venta_detalle, name="venta_detalle"),
     path("ventas/<int:pk>/accion/", v.venta_accion, name="venta_accion"),
+    path("pagos/", views_pagos.pagos_lista, name="pagos"),
     # usuarios
     path("usuarios/", v.UsuarioLista.as_view(), name="usuarios"),
     path("usuarios/nuevo/", v.UsuarioCrear.as_view(), name="usuario_crear"),

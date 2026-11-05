@@ -77,6 +77,20 @@ def confirmar_pago(token, pasarela=None, cancelado=False, request=None):
         _auditar(pago, request)
         return pago
 
+@transaction.atomic
+def registrar_pago_manual(venta_id, usuario, referencia="transferencia", request=None):
+    """El administrador confirma un pago fuera de la pasarela (p. ej. transferencia).
+
+    Deja un `Pago` aprobado con proveedor «manual» para que el listado y los totales de pagos sean completos.
+    """
+    venta = ventas.marcar_pagada(venta_id, usuario=usuario, referencia=f"manual:{referencia}", request=request)
+    if Pago.objects.filter(venta=venta, estado=EstadoPago.APROBADO).exists():
+        return Pago.objects.filter(venta=venta, estado=EstadoPago.APROBADO).first()  # ya tenía un pago aprobado
+    return Pago.objects.create(
+        venta=venta, proveedor="manual", monto=venta.total, estado=EstadoPago.APROBADO,
+        referencia=referencia[:100], detalle={"registrado_por": usuario.email},
+    )
+
 
 def _auditar(pago, request):
     auditoria.registrar(

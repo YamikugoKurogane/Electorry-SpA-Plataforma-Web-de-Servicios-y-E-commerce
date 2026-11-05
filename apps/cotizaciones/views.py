@@ -12,7 +12,7 @@ from .models import Cotizacion
 @rol_requerido(*TODOS_AUTENTICADOS)
 def detalle(request, pk):
     """Vista imprimible de una cotización. El cliente solo ve las suyas y no los borradores."""
-    cot = get_object_or_404(Cotizacion.objects.select_related("solicitud__servicio").prefetch_related("lineas"), pk=pk)
+    cot = get_object_or_404(Cotizacion.objects.select_related("solicitud__servicio").prefetch_related("lineas", "solicitud__items"), pk=pk)
     obtener_solicitud_para(request.user, cot.solicitud_id, request)
     if request.user.es_cliente and cot.estado == "BORRADOR":
         return redirect("solicitudes:detalle", pk=cot.solicitud_id)

@@ -32,3 +32,11 @@
   (`apps/core/busqueda.py`). **Pendiente de verificar con la extensión real** en Docker (`postgres:16`); en desarrollo se validó la
   forma de la consulta emulando la función.
 - SQLite no ignora mayúsculas en letras con tilde: solo afecta al desarrollo local.
+
+## Decisiones del sprint 3
+- **Cotizar productos:** una solicitud puede tener servicio, productos o ambos (al menos uno). Los productos se guardan con nombre y precio congelados al solicitar. Máximo 20 productos distintos y 999 unidades por producto.
+- **Precio sugerido en la cotización:** el precio publicado incluye IVA; la cotización trabaja en neto, por eso se precarga `precio / 1,19` (IVA configurable). Es solo una sugerencia editable.
+- **Listado de pagos:** solo administrador. Incluye pagos manuales (transferencia), que ahora dejan un registro de pago con medio «manual», para que los totales de cobro sean completos.
+- **Exportaciones CSV:** se neutralizan celdas que empiezan con `= + - @` (inyección de fórmulas en Excel).
+- **Respaldos:** retención mínima de 7 días (el script rechaza menos); se conservan siempre los últimos 3 respaldos. Los respaldos están en el mismo servidor: hay que copiarlos fuera (riesgo documentado).
+- **Pendiente de validar:** el ciclo respaldo → restauración se probó contra PostgreSQL real fuera de Docker; falta ejecutarlo en el staging real con `docker compose`.

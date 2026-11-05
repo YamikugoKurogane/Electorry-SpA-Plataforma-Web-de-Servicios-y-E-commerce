@@ -43,4 +43,15 @@
       total.value = n + 1;
     });
   }
+    // 4) Agregar filas de producto en la solicitud de cotización.
+  var addItem = document.getElementById("add-item");
+  if (addItem) {
+    addItem.addEventListener("click", function () {
+      var total = document.getElementById("id_items-TOTAL_FORMS"), n = parseInt(total.value, 10);
+      if (n >= 20) { addItem.hidden = true; return; }
+      document.getElementById("items").insertAdjacentHTML("beforeend",
+        document.getElementById("item-vacio").innerHTML.replace(/__prefix__/g, n));
+      total.value = n + 1;
+    });
+  }
 })();

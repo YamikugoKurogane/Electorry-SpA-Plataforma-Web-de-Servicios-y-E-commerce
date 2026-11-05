@@ -1,4 +1,7 @@
 import logging
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.conf import settings
 
 from django.db import transaction
 from django.utils import timezone
@@ -16,6 +19,22 @@ log = logging.getLogger("electorry.cotizaciones")
 
 class CotizacionError(Exception):
     pass
+
+
+def lineas_sugeridas(solicitud):
+    """Líneas iniciales a partir de los productos que pidió el cliente (RF-18).
+
+    El precio publicado incluye IVA; la cotización trabaja con precios netos, por eso se divide por (1 + IVA).
+    Son solo una sugerencia: quien cotiza puede editarlas.
+    """
+    factor = Decimal(100 + settings.IVA_PORCENTAJE) / Decimal(100)
+    return [
+        {
+            "descripcion": i.nombre_producto, "cantidad": i.cantidad,
+            "precio_unitario": int((Decimal(i.precio_referencia) / factor).quantize(Decimal("1"), rounding=ROUND_HALF_UP)),
+        }
+        for i in solicitud.items.all()
+    ]
 
 
 def _guardar_lineas(cotizacion, lineas):

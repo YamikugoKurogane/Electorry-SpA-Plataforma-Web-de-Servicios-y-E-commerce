@@ -6,10 +6,8 @@
 | RF-01 Registro/login/validación | HU-01 | `usuarios/forms.py`, `views.py` | `test_usuarios.RegistroLoginTests` |
 | RF-02 Catálogo de servicios | HU-02, 03 | `catalogo/` | `test_panel_reportes.CatalogoPublicoTests` |
 | RF-03 Solicitud de cotización + adjuntos | HU-04 | `solicitudes/forms.py`, `services.crear_solicitud` | `test_solicitudes.CrearSolicitudTests` |
-| RF-04 Cliente consulta sus solicitudes | HU-05 | `solicitudes/views.py` (`mis_solicitudes`, `detalle`) | `AutorizacionPorObjetoTests`, `EstadosTests`, `CancelacionClienteTests` |
+| RF-04 Cliente consulta sus solicitudes | HU-05 | `solicitudes/views.py` (`mis_solicitudes`, `detalle`) | `AutorizacionPorObjetoTests`, `EstadosTests` |
 | RF-05 Gestión de solicitudes e historial | HU-06, 07 | `panel/views.py`, `solicitudes/services.cambiar_estado` | `EstadosTests` |
-| S3-J1 Contacto y textos institucionales | — | `panel:configuracion`, `core.models.ConfiguracionSitio`, `core.context_processors.sitio` | `ConfiguracionSitioTests` |
-| S3-J2 Cancelación por el cliente | — | `solicitudes:cancelar`, `solicitudes.services.cancelar_solicitud_cliente` | `CancelacionClienteTests` |
 | RF-06 CRUD servicios | HU-08 | `panel` (`Servicio*`) | `PanelCrudTests` |
 | RF-07 Clientes e historial | HU-09, 11 | `panel` (`clientes_lista`, `cliente_detalle`) | `PanelCrudTests.test_clientes_historial` |
 | RF-08 Cotizaciones | HU-10 | `cotizaciones/` | `test_cotizaciones` |
@@ -41,7 +39,7 @@
 | AUD-01 | `HistorialEstado` + `RegistroAuditoria` en la misma transacción | `test_flujo_completo_con_historial` |
 | USA-01 | Formulario mínimo, responsivo, validación en línea | UAT pendiente (≤ 5 min) |
 | MAN-01 | `services.py` por app | revisión de código |
-| MAN-02 | 115 pruebas + `.github/workflows/ci.yml` en cada PR | CI |
+| MAN-02 | 91 pruebas + `.github/workflows/ci.yml` en cada PR | CI |
 | MAN-03 | README, docs/ | — |
 | POR-01/02 | CSS responsivo; Docker + variables de entorno | — |
 
@@ -49,3 +47,12 @@
 EC-01 `AutorizacionPorObjetoTests` · EC-02 `PagoTests` (idempotencia, atomicidad) · EC-03 `test_cambiar_de_pasarela_no_toca_ventas` ·
 EC-04 diseño (UAT pendiente) · EC-05 `assertNumQueries` · EC-06 `NotificacionesTests`, `test_falla_de_pasarela_*` ·
 EC-07 `deploy/backup.sh` · EC-08 `EstadosTests` · EC-09 `TRANSICIONES` en un solo diccionario · EC-10 pruebas de adjuntos · EC-11 `docker-compose.yml` + CI.
+
+## Sprint 3 (numeración de la «Especificación de Requisitos»)
+| Tarea | Requisito | Implementación | Pruebas |
+|---|---|---|---|
+| S3-R1 Cotizar productos | RF-18, HU-04 | `solicitudes` (`ItemSolicitud`, `services.crear_solicitud`, formulario con productos), precarga de líneas en `cotizaciones.services.lineas_sugeridas`, entradas desde la ficha del producto y el carrito | `tests/test_solicitudes.CotizarProductosTests`, `tests/test_cotizaciones.CotizacionDeProductosTests` |
+| S3-R2 Listado de pagos | RF-36 | `panel/views_pagos.py`, `panel/pagos_lista.html`, `pagos.services.registrar_pago_manual` | `tests/test_pagos_panel.py` |
+| S3-R3 Respaldo diario ampliado | RNF-18 | `deploy/backup.sh`, servicio `respaldo` del compose | Ejecución real contra PostgreSQL (ver `docs/RESPALDOS.md`) y trabajo `respaldos` del CI |
+| S3-R4 Prueba de restauración | RNF-18 | `deploy/restore.sh`, `deploy/probar_restauracion.sh`, `docs/RESPALDOS.md` | Pendiente: ejecutar en staging y completar la planilla de evidencia |
+| S3-R5 Contenido real | RF-09, RF-10 | `importar_contenido` (S2-R3) | Pendiente: recibir los datos reales |

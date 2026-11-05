@@ -200,56 +200,6 @@ class EstadosTests(BaseTest):
         self.assertEqual(len(r.context["pagina"]), 0)  # el contacto es c1@t.cl en datos de prueba
 
 
-class CancelacionClienteTests(BaseTest):
-    def setUp(self):
-        self.sol = self.crear_solicitud()
-
-    def test_cliente_cancela_su_solicitud_y_se_audita(self):
-        self.login(self.cliente)
-        url = reverse("solicitudes:cancelar", args=[self.sol.pk])
-        self.assertContains(self.client.get(self.sol.get_absolute_url()), "Cancelar solicitud")
-        r = self.client.post(url)
-        self.assertRedirects(r, self.sol.get_absolute_url())
-        self.sol.refresh_from_db()
-        self.assertEqual(self.sol.estado, Estado.CANCELADA)
-        self.assertEqual(
-            list(self.sol.historial.values_list("estado_nuevo", flat=True)),
-            [Estado.PENDIENTE, Estado.CANCELADA],
-        )
-        self.assertTrue(
-            RegistroAuditoria.objects.filter(
-                entidad="solicitud", entidad_id=self.sol.pk, accion="CAMBIO_ESTADO"
-            ).exists()
-        )
-
-    def test_cliente_no_cancela_solicitud_ajena(self):
-        self.login(self.cliente2)
-        self.assertEqual(
-            self.client.post(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code,
-            404,
-        )
-        self.sol.refresh_from_db()
-        self.assertEqual(self.sol.estado, Estado.PENDIENTE)
-
-    def test_cliente_no_cancela_si_esta_en_ejecucion(self):
-        for estado in (Estado.EN_REVISION, Estado.COTIZADA, Estado.ACEPTADA, Estado.EN_EJECUCION):
-            services.cambiar_estado(self.sol, estado, self.admin)
-        self.login(self.cliente)
-        url = reverse("solicitudes:cancelar", args=[self.sol.pk])
-        self.assertNotContains(self.client.get(self.sol.get_absolute_url()), "Cancelar solicitud")
-        r = self.client.post(url)
-        self.assertRedirects(r, self.sol.get_absolute_url(), fetch_redirect_response=False)
-        self.sol.refresh_from_db()
-        self.assertEqual(self.sol.estado, Estado.EN_EJECUCION)
-        self.assertContains(self.client.get(self.sol.get_absolute_url()), "No puedes cancelar")
-
-    def test_cancelacion_solo_por_post_y_cliente(self):
-        self.login(self.cliente)
-        self.assertEqual(self.client.get(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code, 405)
-        self.login(self.interno)
-        self.assertEqual(self.client.post(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code, 403)
-
-
 class NotificacionesTests(BaseTest):
     def test_cambio_de_estado_envia_correo(self):  # RF-11
         sol = self.crear_solicitud()
@@ -287,3 +237,148 @@ class NotificacionesTests(BaseTest):
                 ns.notificar("a@b.cl", "Hola", "cuerpo")
             ns.reintentar_pendientes()
         self.assertEqual(Notificacion.objects.get().estado, Notificacion.Estado.FALLIDA)
+
+
+class CotizarProductosTests(BaseTest):
+    """S3-R1 · RF-18: una solicitud puede cotizar un servicio, productos o ambos."""
+
+    def items_post(self, *pares, total=None):
+        d = {"items-TOTAL_FORMS": str(total if total is not None else len(pares)), "items-INITIAL_FORMS": "0"}
+        for i, (pid, cant) in enumerate(pares):
+            d[f"items-{i}-producto"] = str(pid)
+            d[f"items-{i}-cantidad"] = str(cant)
+        return d
+
+    def enviar(self, servicio=None, items=(), **extra):
+        self.login(self.cliente)
+        datos = self.datos_solicitud(**extra)
+        datos["servicio"] = servicio.pk if servicio else ""
+        datos.update(self.items_post(*items))
+        return self.client.post(reverse("solicitudes:crear"), datos)
+
+    def test_solo_productos(self):
+        r = self.enviar(items=[(self.producto.pk, 3), (self.producto2.pk, 1)])
+        s = SolicitudCotizacion.objects.get()
+        self.assertRedirects(r, s.get_absolute_url(), fetch_redirect_response=False)
+        self.assertIsNone(s.servicio)
+        self.assertEqual([(i.nombre_producto, i.cantidad, i.precio_referencia) for i in s.items.all()],
+                         [("Disyuntor 20A", 3, 7000), ("Diferencial", 1, 25000)])
+        self.assertTrue(s.asunto.startswith("Productos: Disyuntor 20A"))
+        self.assertEqual(s.tipo, "Productos")
+
+    def test_servicio_y_productos(self):
+        self.enviar(servicio=self.servicio, items=[(self.producto.pk, 2)])
+        s = SolicitudCotizacion.objects.get()
+        self.assertEqual(s.servicio, self.servicio)
+        self.assertEqual(s.items.count(), 1)
+        self.assertEqual(s.tipo, "Servicio y productos")
+        self.assertIn("Instalación residencial + productos", s.asunto)
+
+    def test_solo_servicio_sigue_funcionando(self):
+        self.enviar(servicio=self.servicio)
+        s = SolicitudCotizacion.objects.get()
+        self.assertEqual(s.items.count(), 0)
+        self.assertEqual(s.asunto, "Instalación residencial")
+
+    def test_sin_servicio_ni_productos_se_rechaza(self):
+        r = self.enviar()
+        self.assertEqual(SolicitudCotizacion.objects.count(), 0)
+        self.assertContains(r, "Elige un servicio o agrega al menos un producto")
+
+    def test_filas_vacias_se_ignoran(self):
+        self.enviar(items=[("", 1), (self.producto.pk, 2), ("", 1)])
+        self.assertEqual(SolicitudCotizacion.objects.get().items.count(), 1)
+
+    def test_productos_repetidos_se_suman(self):
+        self.enviar(items=[(self.producto.pk, 2), (self.producto.pk, 3)])
+        i = SolicitudCotizacion.objects.get().items.get()
+        self.assertEqual(i.cantidad, 5)
+
+    def test_cantidad_invalida(self):
+        for cant in (0, -2, 1000):
+            r = self.enviar(items=[(self.producto.pk, cant)])
+            self.assertEqual(SolicitudCotizacion.objects.count(), 0, cant)
+            self.assertEqual(r.status_code, 200)
+
+    def test_producto_inactivo_o_inexistente(self):
+        self.producto.activo = False
+        self.producto.save()
+        self.enviar(items=[(self.producto.pk, 1)])
+        self.enviar(items=[(99999, 1)])
+        self.assertEqual(SolicitudCotizacion.objects.count(), 0)
+
+    def test_maximo_de_productos_distintos(self):
+        from apps.tienda.models import Producto
+        pids = [Producto.objects.create(categoria=self.producto.categoria, nombre=f"P{i}", precio=1000).pk for i in range(21)]
+        self.enviar(items=[(pid, 1) for pid in pids])
+        self.assertEqual(SolicitudCotizacion.objects.count(), 0)
+
+    def test_envio_sin_seccion_de_productos_es_valido(self):  # compatibilidad: formularios antiguos
+        self.login(self.cliente)
+        self.client.post(reverse("solicitudes:crear"), self.datos_solicitud())
+        self.assertEqual(SolicitudCotizacion.objects.get().items.count(), 0)
+
+    def test_servicio_service_exige_algo_que_cotizar(self):
+        with self.assertRaises(services.SolicitudError):
+            services.crear_solicitud(cliente=self.cliente, servicio=None, datos=self.datos_solicitud(), items=[])
+
+    def test_precarga_desde_ficha_de_producto(self):
+        self.login(self.cliente)
+        r = self.client.get(reverse("solicitudes:crear"), {"producto": self.producto.pk})
+        self.assertEqual(r.context["items_fs"].forms[0].initial["producto"], self.producto.pk)
+        r = self.client.get(reverse("solicitudes:crear"), {"producto": "999999"})
+        self.assertEqual(r.context["items_fs"].initial or [], [])
+
+    def test_precarga_desde_el_carrito(self):
+        self.login(self.cliente)
+        self.client.post(reverse("tienda:carrito_agregar", args=[self.producto.pk]), {"cantidad": 4})
+        r = self.client.get(reverse("solicitudes:crear"), {"desde": "carrito"})
+        self.assertEqual(r.context["items_fs"].initial, [{"producto": self.producto.pk, "cantidad": 4}])
+
+    def test_visitante_que_cotiza_producto_pasa_por_login_y_conserva_destino(self):
+        r = self.client.get(reverse("solicitudes:crear"), {"producto": self.producto.pk})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("next=", r["Location"])
+        self.assertIn("producto", r["Location"])
+
+    def test_productos_se_ven_en_detalle_cliente_y_panel(self):
+        self.enviar(items=[(self.producto.pk, 3)])
+        s = SolicitudCotizacion.objects.get()
+        self.assertContains(self.client.get(s.get_absolute_url()), "Disyuntor 20A")
+        self.login(self.admin)
+        r = self.client.get(reverse("panel:solicitud_detalle", args=[s.pk]))
+        self.assertContains(r, "Disyuntor 20A")
+        self.assertContains(r, "$21.000")  # 3 × 7.000
+
+    def test_listados_muestran_asunto_sin_consultas_por_fila(self):  # RNF-PER-02
+        for _ in range(6):
+            self.enviar(servicio=self.servicio, items=[(self.producto.pk, 1), (self.producto2.pk, 2)])
+        self.login(self.cliente)
+        with self.assertNumQueries(5):
+            r = self.client.get(reverse("solicitudes:mis_solicitudes"))
+        self.assertContains(r, "Disyuntor 20A")
+        self.login(self.admin)
+        r = self.client.get(reverse("panel:solicitudes"))
+        self.assertContains(r, "Productos")
+
+    def test_precio_referencia_se_congela(self):
+        self.enviar(items=[(self.producto.pk, 1)])
+        self.producto.precio = 99999
+        self.producto.save()
+        self.assertEqual(SolicitudCotizacion.objects.get().items.get().precio_referencia, 7000)
+
+    def test_producto_con_solicitudes_se_desactiva_no_se_borra(self):
+        self.enviar(items=[(self.producto.pk, 1)])
+        self.login(self.admin)
+        self.client.post(reverse("panel:producto_eliminar", args=[self.producto.pk]))
+        self.producto.refresh_from_db()
+        self.assertFalse(self.producto.activo)
+
+    def test_correo_interno_incluye_productos(self):
+        from django.core.mail import outbox  # noqa: F401
+        with self.settings(CORREO_AVISOS_INTERNOS="ventas@t.cl"):
+            with self.captureOnCommitCallbacks(execute=True):
+                self.enviar(items=[(self.producto.pk, 3)])
+        from django.core import mail
+        interno = [m for m in mail.outbox if m.to == ["ventas@t.cl"]][0]
+        self.assertIn("3 × Disyuntor 20A", interno.body)

@@ -26,3 +26,20 @@ def formatear_clp(valor):
         return "$" + f"{int(valor):,}".replace(",", ".")
     except (TypeError, ValueError):
         return "$0"
+
+    
+
+def csv_seguro(valor):
+    """Evita la inyección de fórmulas: Excel ejecuta celdas que empiezan con = + - @ (datos escritos por usuarios)."""
+    texto = "" if valor is None else str(valor)
+    return "'" + texto if texto[:1] in ("=", "+", "-", "@", "\t", "\r") else texto
+
+
+def fecha_o_none(texto):
+    """Fecha ISO (AAAA-MM-DD) o None. Tolera también fechas imposibles como 2026-13-45 (parse_date lanza ValueError)."""
+    from django.utils.dateparse import parse_date
+
+    try:
+        return parse_date((texto or "").strip())
+    except ValueError:
+        return None

@@ -9,7 +9,7 @@ autenticación por sesión con roles, adaptador de pagos, correo tolerante a fal
 |---|---|
 | `usuarios` | Usuario único con rol (Cliente / Interno / Admin), registro, login con límite de intentos, privacidad (rectificar/eliminar) |
 | `catalogo` | Servicios y categorías (público) |
-| `solicitudes` | Solicitud de cotización, adjuntos seguros, máquina de estados, historial |
+| `solicitudes` | Solicitud de cotización de un servicio, de productos o de ambos, adjuntos seguros, máquina de estados, historial |
 | `cotizaciones` | Cotizaciones con líneas, IVA, envío, aceptación/rechazo del cliente |
 | `tienda` | Productos, carrito (sesión), ventas y detalle |
 | `pagos` | Adaptador de pasarela (`sandbox`, `webpay`), intentos de pago idempotentes |
@@ -35,7 +35,7 @@ python manage.py runserver
 ```
 Con PostgreSQL: define `DATABASE_URL=postgres://usuario:clave@localhost:5432/electorry`.
 
-Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (115 pruebas; algunas se omiten según el motor de base de datos).
+Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (153 pruebas; algunas se omiten según el motor de base de datos).
 
 ## Base de datos en desarrollo (PostgreSQL)
 
@@ -97,7 +97,7 @@ búsqueda sigue funcionando, solo que distinguiendo tildes.
 | Catálogo de servicios y productos, carrito | ✅ | ✅ | ✅ | ✅ |
 | Crear solicitud, comprar, ver **solo lo propio** | — | ✅ | — | — |
 | Panel: solicitudes, cotizaciones, clientes (lectura), ventas (lectura) | — | — | ✅ | ✅ |
-| CRUD servicios/productos, usuarios y roles, reportes, auditoría, correos, anonimizar, cancelar/marcar pago | — | — | — | ✅ |
+| CRUD servicios/productos, usuarios y roles, reportes, **listado de pagos**, auditoría, correos, anonimizar, cancelar/marcar pago | — | — | — | ✅ |
 
 ## Despliegue (staging y producción: mismo stack, solo cambian variables — EC-11)
 
@@ -107,17 +107,19 @@ export DJANGO_CSRF_TRUSTED_ORIGINS=https://tu-dominio.cl
 docker compose up -d --build
 docker compose exec web python manage.py createsuperuser   # primer administrador
 ```
-Incluye: Nginx (estáticos + proxy), Gunicorn, PostgreSQL, reintento de correos cada 5 min y **respaldo diario**
-con retención de 14 días. HTTPS: terminar TLS en el balanceador del proveedor cloud o con certbot; la app
-fuerza HTTPS, cookies `Secure`/`HttpOnly` y HSTS cuando `DJANGO_DEBUG` no está activo.
+Incluye: Nginx (estáticos + proxy), Gunicorn, PostgreSQL, reintento de correos cada 5 min y **respaldo diario de la
+base de datos y de los archivos subidos** (retención de 14 días por defecto, mínimo 7). HTTPS: terminar TLS en el balanceador
+del proveedor cloud o con certbot; la app fuerza HTTPS, cookies `Secure`/`HttpOnly` y HSTS cuando `DJANGO_DEBUG` no está activo.
 
-**Restauración** (probar al menos una vez antes del cierre — RNF-FIA-03):
+### Respaldos y restauración
+Procedimiento completo, prueba de restauración en staging y planilla de evidencia: **`docs/RESPALDOS.md`**.
 ```bash
-docker compose stop web nginx correo
-docker compose exec respaldo ls /backups
-docker compose run --rm -v $PWD/deploy/restore.sh:/restore.sh:ro respaldo sh /restore.sh /backups/electorry_XXXXXXXX_XXXXXX.dump
-docker compose start web nginx correo
+docker compose run --rm prueba_restauracion      # prueba SIN tocar el sistema en vivo (usa el último respaldo)
+docker compose stop web correo nginx             # restauración real: destructiva, con la app detenida
+docker compose run --rm -e CONFIRMAR=SI restauracion /backups/AAAAMMDD_HHMMSS
+docker compose start web correo nginx
 ```
+Los respaldos viven en el mismo servidor: cópialos periódicamente a otro lugar (ver `docs/RESPALDOS.md`, sección 4).
 
 ## Pasarela de pago (D5)
 `PAYMENT_GATEWAY=sandbox` (simulada, solo si `DEBUG`/`PAYMENT_SANDBOX_PERMITIDO`) o `webpay` (Transbank REST;
