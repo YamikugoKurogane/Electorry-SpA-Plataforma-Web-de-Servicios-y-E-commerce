@@ -1,0 +1,12 @@
+{% extends "panel/base.html" %}
+{% block title %}Configuración del sitio · {{ EMPRESA.nombre }}{% endblock %}
+{% block panel %}
+<div class="card medium" style="margin:0">
+  <h1>Configuración del sitio</h1>
+  <p class="muted">Edita los datos de contacto y los textos institucionales que se muestran en el sitio público.</p>
+  <form method="post" class="form" novalidate data-once>{% csrf_token %}
+    {% include "partials/form.html" %}
+    <div class="row"><button class="btn" type="submit">Guardar configuración</button></div>
+  </form>
+</div>
+{% endblock %}

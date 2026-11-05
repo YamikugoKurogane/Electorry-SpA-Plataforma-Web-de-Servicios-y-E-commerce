@@ -1,13 +1,18 @@
 from django.contrib import messages
+from django.conf import settings
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
+from apps.auditoria import services as auditoria
 from apps.auditoria.models import RegistroAuditoria
 from apps.catalogo.forms import CategoriaServicioForm, ServicioForm
 from apps.catalogo.models import CategoriaServicio, Servicio
+from apps.core.forms import ConfiguracionSitioForm
+from apps.core.models import ConfiguracionSitio
 from apps.core.permisos import PERSONAL, SOLO_ADMIN, rol_requerido
 from apps.cotizaciones import services as cot_services
 from apps.cotizaciones.forms import CotizacionForm, LineaFormSet
@@ -25,6 +30,43 @@ from apps.usuarios.forms import UsuarioPersonalForm
 from apps.usuarios.models import Rol, Usuario
 
 from .crud import CrudCreateView, CrudEliminarView, CrudListView, CrudUpdateView
+
+
+@rol_requerido(*SOLO_ADMIN)
+def configuracion_sitio(request):
+    defaults = {
+        "nombre": settings.EMPRESA["nombre"],
+        "eslogan": settings.EMPRESA["eslogan"],
+        "email": settings.EMPRESA["email"],
+        "telefono": settings.EMPRESA["telefono"],
+        "whatsapp": settings.EMPRESA["whatsapp"],
+        "direccion": settings.EMPRESA["direccion"],
+        "titulo_inicio": settings.EMPRESA["titulo_inicio"],
+        "texto_inicio": settings.EMPRESA["texto_inicio"],
+    }
+    instancia = ConfiguracionSitio.objects.filter(pk=1).first() or ConfiguracionSitio(pk=1, **defaults)
+    form = ConfiguracionSitioForm(request.POST or None, instance=instancia)
+    if request.method == "POST" and form.is_valid():
+        nuevo = instancia._state.adding
+        antes = {} if nuevo else {campo: getattr(instancia, campo) for campo in form.changed_data}
+        with transaction.atomic():
+            configuracion = form.save(commit=False)
+            configuracion.pk = 1
+            configuracion.save()
+            despues = {campo: getattr(configuracion, campo) for campo in form.changed_data}
+            auditoria.registrar(
+                usuario=request.user,
+                accion=auditoria.Accion.CREAR if nuevo else auditoria.Accion.EDITAR,
+                entidad="configuracion_sitio",
+                entidad_id=configuracion.pk,
+                descripcion="Configuración de contacto e información institucional",
+                antes=antes,
+                despues=despues,
+                request=request,
+            )
+        messages.success(request, "Configuración del sitio guardada correctamente.")
+        return redirect("panel:configuracion")
+    return render(request, "panel/configuracion.html", {"seccion": "configuracion", "form": form})
 
 
 # ================================================================= dashboard

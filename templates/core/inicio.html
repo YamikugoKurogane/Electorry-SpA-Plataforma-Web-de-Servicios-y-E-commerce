@@ -1,8 +1,8 @@
 {% extends "base.html" %}{% load electorry %}
 {% block content %}
 <section class="hero">
-  <h1>Soluciones eléctricas confiables, con seguimiento claro.</h1>
-  <p>Cotiza servicios eléctricos y compra productos en un solo lugar. Sigue el estado de tu solicitud en línea, sin perder mensajes ni esperar días por una respuesta.</p>
+  <h1>{{ EMPRESA.titulo_inicio }}</h1>
+  <p>{{ EMPRESA.texto_inicio }}</p>
   <div class="row" style="margin-top:1.2rem">
     <a class="btn" href="{% url 'solicitudes:crear' %}">Solicitar cotización</a>
     <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" href="{% url 'catalogo:lista' %}">Ver servicios</a>

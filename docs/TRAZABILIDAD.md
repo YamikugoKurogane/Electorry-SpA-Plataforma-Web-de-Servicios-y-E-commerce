@@ -6,8 +6,10 @@
 | RF-01 Registro/login/validación | HU-01 | `usuarios/forms.py`, `views.py` | `test_usuarios.RegistroLoginTests` |
 | RF-02 Catálogo de servicios | HU-02, 03 | `catalogo/` | `test_panel_reportes.CatalogoPublicoTests` |
 | RF-03 Solicitud de cotización + adjuntos | HU-04 | `solicitudes/forms.py`, `services.crear_solicitud` | `test_solicitudes.CrearSolicitudTests` |
-| RF-04 Cliente consulta sus solicitudes | HU-05 | `solicitudes/views.py` (`mis_solicitudes`, `detalle`) | `AutorizacionPorObjetoTests`, `EstadosTests` |
+| RF-04 Cliente consulta sus solicitudes | HU-05 | `solicitudes/views.py` (`mis_solicitudes`, `detalle`) | `AutorizacionPorObjetoTests`, `EstadosTests`, `CancelacionClienteTests` |
 | RF-05 Gestión de solicitudes e historial | HU-06, 07 | `panel/views.py`, `solicitudes/services.cambiar_estado` | `EstadosTests` |
+| S3-J1 Contacto y textos institucionales | — | `panel:configuracion`, `core.models.ConfiguracionSitio`, `core.context_processors.sitio` | `ConfiguracionSitioTests` |
+| S3-J2 Cancelación por el cliente | — | `solicitudes:cancelar`, `solicitudes.services.cancelar_solicitud_cliente` | `CancelacionClienteTests` |
 | RF-06 CRUD servicios | HU-08 | `panel` (`Servicio*`) | `PanelCrudTests` |
 | RF-07 Clientes e historial | HU-09, 11 | `panel` (`clientes_lista`, `cliente_detalle`) | `PanelCrudTests.test_clientes_historial` |
 | RF-08 Cotizaciones | HU-10 | `cotizaciones/` | `test_cotizaciones` |
@@ -39,7 +41,7 @@
 | AUD-01 | `HistorialEstado` + `RegistroAuditoria` en la misma transacción | `test_flujo_completo_con_historial` |
 | USA-01 | Formulario mínimo, responsivo, validación en línea | UAT pendiente (≤ 5 min) |
 | MAN-01 | `services.py` por app | revisión de código |
-| MAN-02 | 91 pruebas + `.github/workflows/ci.yml` en cada PR | CI |
+| MAN-02 | 115 pruebas + `.github/workflows/ci.yml` en cada PR | CI |
 | MAN-03 | README, docs/ | — |
 | POR-01/02 | CSS responsivo; Docker + variables de entorno | — |
 

@@ -222,6 +222,8 @@ EMPRESA = {
     "telefono": env("EMPRESA_TELEFONO", "+56 9 0000 0000"),
     "whatsapp": env("EMPRESA_WHATSAPP", ""),  # solo dígitos, ej: 56900000000
     "direccion": env("EMPRESA_DIRECCION", "Chile"),
+    "titulo_inicio": "Soluciones eléctricas confiables, con seguimiento claro.",
+    "texto_inicio": "Cotiza servicios eléctricos y compra productos en un solo lugar. Sigue el estado de tu solicitud en línea, sin perder mensajes ni esperar días por una respuesta.",
 }
 
 # Pasarela de pago (D5). Valores: "sandbox" | "webpay"

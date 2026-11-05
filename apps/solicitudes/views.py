@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from apps.core.permisos import SOLO_CLIENTE, TODOS_AUTENTICADOS, rol_requerido
 
@@ -47,8 +48,21 @@ def detalle(request, pk):
             "historial": solicitud.historial.all(),
             "adjuntos": solicitud.adjuntos.all(),
             "cotizaciones": cotizaciones,
+            "puede_cancelar": request.user.es_cliente and services.puede_cliente_cancelar(solicitud),
         },
     )
+
+
+@require_POST
+@rol_requerido(*SOLO_CLIENTE)
+def cancelar(request, pk):
+    solicitud = services.obtener_solicitud_para(request.user, pk, request)
+    try:
+        services.cancelar_solicitud_cliente(solicitud, request.user, request)
+        messages.success(request, f"La solicitud {solicitud.codigo} fue cancelada.")
+    except services.TransicionInvalida as exc:
+        messages.error(request, str(exc))
+    return redirect(solicitud)
 
 
 @rol_requerido(*TODOS_AUTENTICADOS)

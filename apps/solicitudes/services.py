@@ -114,6 +114,11 @@ def cambiar_estado(solicitud, nuevo_estado, usuario, comentario="", request=None
         raise TransicionInvalida(f"Estado desconocido: {nuevo_estado}")
     if nuevo_estado == anterior:
         raise TransicionInvalida("La solicitud ya está en ese estado.")
+    if usuario and usuario.rol == Rol.CLIENTE:
+        if solicitud.cliente_id != usuario.pk:
+            raise TransicionInvalida("No puedes cambiar esta solicitud.")
+        if nuevo_estado == Estado.CANCELADA and anterior == Estado.EN_EJECUCION:
+            raise TransicionInvalida("No puedes cancelar una solicitud que está en ejecución.")
     if nuevo_estado not in TRANSICIONES.get(anterior, set()):
         raise TransicionInvalida(
             f"No se puede pasar de «{Estado(anterior).label}» a «{Estado(nuevo_estado).label}»."
@@ -138,6 +143,21 @@ def cambiar_estado(solicitud, nuevo_estado, usuario, comentario="", request=None
         evento="cambio_estado",
     )
     return solicitud
+
+
+def puede_cliente_cancelar(solicitud):
+    return (
+        solicitud.estado != Estado.EN_EJECUCION
+        and Estado.CANCELADA in TRANSICIONES.get(solicitud.estado, set())
+    )
+
+
+@transaction.atomic
+def cancelar_solicitud_cliente(solicitud, cliente, request=None):
+    actual = SolicitudCotizacion.objects.select_for_update().get(pk=solicitud.pk)
+    if cliente.rol != Rol.CLIENTE or actual.cliente_id != cliente.pk:
+        raise TransicionInvalida("No puedes cancelar esta solicitud.")
+    return cambiar_estado(actual, Estado.CANCELADA, cliente, "Cancelada por el cliente", request)
 
 
 @transaction.atomic

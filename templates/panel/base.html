@@ -18,6 +18,7 @@
     <a href="{% url 'panel:usuarios' %}" class="{% if seccion == 'usuarios' %}active{% endif %}">Usuarios y roles</a>
     <a href="{% url 'panel:auditoria' %}" class="{% if seccion == 'auditoria' %}active{% endif %}">Auditoría</a>
     <a href="{% url 'panel:notificaciones' %}" class="{% if seccion == 'notificaciones' %}active{% endif %}">Correos</a>
+    <a href="{% url 'panel:configuracion' %}" class="{% if seccion == 'configuracion' %}active{% endif %}">Contacto y textos</a>
     {% endif %}
   </aside>
   <section class="stack" style="min-width:0">{% block panel %}{% endblock %}</section>

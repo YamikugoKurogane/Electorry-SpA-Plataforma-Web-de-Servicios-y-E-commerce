@@ -4,6 +4,11 @@
 <p class="small"><a href="{% if user.es_personal %}{% url 'panel:solicitudes' %}{% else %}{% url 'solicitudes:mis_solicitudes' %}{% endif %}">← Volver</a></p>
 <div class="row between"><h1>{{ solicitud.codigo }}</h1><span class="estado estado-{{ solicitud.estado|estado_css }}" style="font-size:1rem">{{ solicitud.get_estado_display }}</span></div>
 {% include "solicitudes/_detalle_cuerpo.html" %}
+{% if puede_cancelar %}
+<form method="post" action="{% url 'solicitudes:cancelar' solicitud.pk %}" class="row" data-once style="margin-top:1rem">
+  {% csrf_token %}<button class="btn danger" type="submit">Cancelar solicitud</button>
+</form>
+{% endif %}
 
 <h2 class="section-title">Cotizaciones</h2>
 {% for cot in cotizaciones %}

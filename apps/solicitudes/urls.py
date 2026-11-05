@@ -8,5 +8,6 @@ urlpatterns = [
     path("", views.mis_solicitudes, name="mis_solicitudes"),
     path("nueva/", views.crear, name="crear"),
     path("<int:pk>/", views.detalle, name="detalle"),
+    path("<int:pk>/cancelar/", views.cancelar, name="cancelar"),
     path("adjuntos/<int:pk>/", views.descargar_adjunto, name="adjunto"),
 ]
