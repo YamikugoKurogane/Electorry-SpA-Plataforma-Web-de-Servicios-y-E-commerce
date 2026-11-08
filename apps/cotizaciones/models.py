@@ -65,7 +65,7 @@ class LineaCotizacion(models.Model):
 
     class Meta:
         ordering = ["id"]
-        constraints = [models.CheckConstraint(check=models.Q(cantidad__gt=0), name="linea_cot_cantidad_positiva")]
+        constraints = [models.CheckConstraint(condition=models.Q(cantidad__gt=0), name="linea_cot_cantidad_positiva")]
 
     @property
     def subtotal(self):
@@ -75,3 +75,4 @@ class LineaCotizacion(models.Model):
 def total_neto_queryset(qs):
     """Suma neta de un queryset de cotizaciones (para reportes)."""
     return qs.aggregate(t=Sum(F("lineas__cantidad") * F("lineas__precio_unitario")))["t"] or 0
+

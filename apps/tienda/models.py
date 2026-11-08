@@ -101,9 +101,10 @@ class DetalleVenta(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(check=models.Q(cantidad__gt=0), name="detalle_venta_cantidad_positiva"),
+            models.CheckConstraint(condition=models.Q(cantidad__gt=0), name="detalle_venta_cantidad_positiva"),
         ]
 
     @property
     def subtotal(self):
         return self.cantidad * self.precio_unitario
+

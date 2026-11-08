@@ -1,0 +1,2 @@
+MAX_PRODUCTOS_POR_SOLICITUD = 20  # productos distintos por solicitud
+MAX_CANTIDAD_POR_PRODUCTO = 999
