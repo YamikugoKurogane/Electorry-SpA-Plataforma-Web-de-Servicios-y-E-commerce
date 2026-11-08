@@ -77,7 +77,7 @@ class Command(BaseCommand):
         from apps.catalogo.models import CategoriaServicio, Servicio
         from apps.cotizaciones.models import Cotizacion, LineaCotizacion
         from apps.pagos.models import Pago
-        from apps.solicitudes.models import SolicitudCotizacion
+        from apps.solicitudes.models import ItemSolicitud, SolicitudCotizacion
         from apps.tienda.models import CategoriaProducto, DetalleVenta, Producto, Venta
         from apps.usuarios.models import Usuario
 
@@ -99,6 +99,10 @@ class Command(BaseCommand):
                           lambda: DetalleVenta.objects.create(venta=venta, producto=prod, nombre_producto="x", cantidad=0, precio_unitario=1))
         self._debe_fallar("línea de cotización con cantidad 0",
                           lambda: LineaCotizacion.objects.create(cotizacion=cot, descripcion="x", cantidad=0, precio_unitario=1))
+        self._debe_fallar("producto solicitado con cantidad 0",
+                          lambda: ItemSolicitud.objects.create(solicitud=sol, producto=prod, nombre_producto="x", cantidad=0))
+        self._debe_fallar("el mismo producto dos veces en una solicitud",
+                          lambda: [ItemSolicitud.objects.create(solicitud=sol, producto=prod, nombre_producto="x", cantidad=1) for _ in range(2)])
         self._debe_fallar("dos pagos con el mismo token y proveedor",
                           lambda: [Pago.objects.create(venta=venta, proveedor="x", token="t", monto=1) for _ in range(2)])
         self._debe_fallar("borrar un servicio que tiene solicitudes", servicio.delete)

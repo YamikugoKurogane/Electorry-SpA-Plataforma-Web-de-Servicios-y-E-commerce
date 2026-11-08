@@ -12,7 +12,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U electorry"]
       interval: 10s
       retries: 5
-    # ROTACIÓN DE LOGS (S3-A2)
+    # NUEVO: Rotación de logs para la base de datos
     logging:
       driver: "json-file"
       options:
@@ -48,7 +48,7 @@ services:
         ]
       interval: 30s
       retries: 3
-    # ROTACIÓN DE LOGS (S3-A2)
+    # NUEVO: Rotación de logs para la aplicación web (Gunicorn)
     logging:
       driver: "json-file"
       options:
@@ -64,7 +64,7 @@ services:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - media:/app/media:ro
       - static:/app/staticfiles:ro
-    # ROTACIÓN DE LOGS (S3-A2)
+    # NUEVO: Rotación de logs para Nginx
     logging:
       driver: "json-file"
       options:
@@ -89,13 +89,9 @@ services:
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
-    # ROTACIÓN DE LOGS (S3-A2) - Opcional pero recomendado
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
+  # Respaldo diario: base de datos + archivos subidos (adjuntos y fotos). Retención configurable (mínimo 7 días).
+  # Detalle y procedimientos: docs/RESPALDOS.md
   respaldo:
     image: postgres:16
     restart: unless-stopped
@@ -109,20 +105,17 @@ services:
       MEDIA_DIR: /media
       RETENCION_DIAS: "${RETENCION_DIAS:-14}"
     volumes: [./deploy:/deploy:ro, media:/media:ro, backups:/backups]
-    entrypoint:
-      [
-        "sh",
-        "-c",
-        "while true; do sh /deploy/backup.sh || echo 'ATENCION: EL RESPALDO FALLO'; sleep 86400; done",
-      ]
-    healthcheck: # "unhealthy" si el último respaldo exitoso tiene más de 26 horas
-      test:
-        [
-          "CMD-SHELL",
-          "test $$(( $$(date +%s) - $$(cat /backups/ULTIMO_OK 2>/dev/null || echo 0) )) -lt 93600",
-        ]
+    entrypoint: ["sh", "-c", "while true; do sh /deploy/backup.sh || echo 'ATENCION: EL RESPALDO FALLO'; sleep 86400; done"]
+    healthcheck:   # "unhealthy" si el último respaldo exitoso tiene más de 26 horas
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(cat /backups/ULTIMO_OK 2>/dev/null || echo 0) )) -lt 93600"]
       interval: 1h
       start_period: 30m
+    # Rotación de logs (mismo criterio que db, web y nginx)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # --- Herramientas manuales (no se levantan con «up»): usar «docker compose run --rm ...» ---
   # Prueba de restauración sin tocar el sistema en vivo (usa el último respaldo):

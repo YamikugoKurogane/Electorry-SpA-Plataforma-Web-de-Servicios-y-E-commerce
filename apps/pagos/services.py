@@ -77,6 +77,7 @@ def confirmar_pago(token, pasarela=None, cancelado=False, request=None):
         _auditar(pago, request)
         return pago
 
+
 @transaction.atomic
 def registrar_pago_manual(venta_id, usuario, referencia="transferencia", request=None):
     """El administrador confirma un pago fuera de la pasarela (p. ej. transferencia).

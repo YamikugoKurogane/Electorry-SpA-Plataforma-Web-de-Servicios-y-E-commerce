@@ -200,6 +200,56 @@ class EstadosTests(BaseTest):
         self.assertEqual(len(r.context["pagina"]), 0)  # el contacto es c1@t.cl en datos de prueba
 
 
+class CancelacionClienteTests(BaseTest):
+    def setUp(self):
+        self.sol = self.crear_solicitud()
+
+    def test_cliente_cancela_su_solicitud_y_se_audita(self):
+        self.login(self.cliente)
+        url = reverse("solicitudes:cancelar", args=[self.sol.pk])
+        self.assertContains(self.client.get(self.sol.get_absolute_url()), "Cancelar solicitud")
+        r = self.client.post(url)
+        self.assertRedirects(r, self.sol.get_absolute_url())
+        self.sol.refresh_from_db()
+        self.assertEqual(self.sol.estado, Estado.CANCELADA)
+        self.assertEqual(
+            list(self.sol.historial.values_list("estado_nuevo", flat=True)),
+            [Estado.PENDIENTE, Estado.CANCELADA],
+        )
+        self.assertTrue(
+            RegistroAuditoria.objects.filter(
+                entidad="solicitud", entidad_id=self.sol.pk, accion="CAMBIO_ESTADO"
+            ).exists()
+        )
+
+    def test_cliente_no_cancela_solicitud_ajena(self):
+        self.login(self.cliente2)
+        self.assertEqual(
+            self.client.post(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code,
+            404,
+        )
+        self.sol.refresh_from_db()
+        self.assertEqual(self.sol.estado, Estado.PENDIENTE)
+
+    def test_cliente_no_cancela_si_esta_en_ejecucion(self):
+        for estado in (Estado.EN_REVISION, Estado.COTIZADA, Estado.ACEPTADA, Estado.EN_EJECUCION):
+            services.cambiar_estado(self.sol, estado, self.admin)
+        self.login(self.cliente)
+        url = reverse("solicitudes:cancelar", args=[self.sol.pk])
+        self.assertNotContains(self.client.get(self.sol.get_absolute_url()), "Cancelar solicitud")
+        r = self.client.post(url)
+        self.assertRedirects(r, self.sol.get_absolute_url(), fetch_redirect_response=False)
+        self.sol.refresh_from_db()
+        self.assertEqual(self.sol.estado, Estado.EN_EJECUCION)
+        self.assertContains(self.client.get(self.sol.get_absolute_url()), "No puedes cancelar")
+
+    def test_cancelacion_solo_por_post_y_cliente(self):
+        self.login(self.cliente)
+        self.assertEqual(self.client.get(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code, 405)
+        self.login(self.interno)
+        self.assertEqual(self.client.post(reverse("solicitudes:cancelar", args=[self.sol.pk])).status_code, 403)
+
+
 class NotificacionesTests(BaseTest):
     def test_cambio_de_estado_envia_correo(self):  # RF-11
         sol = self.crear_solicitud()
@@ -351,15 +401,25 @@ class CotizarProductosTests(BaseTest):
         self.assertContains(r, "$21.000")  # 3 × 7.000
 
     def test_listados_muestran_asunto_sin_consultas_por_fila(self):  # RNF-PER-02
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def consultas_del_listado():
+            self.login(self.cliente)
+            with CaptureQueriesContext(connection) as c:
+                r = self.client.get(reverse("solicitudes:mis_solicitudes"))
+            return len(c), r
+
+        for _ in range(2):
+            self.enviar(servicio=self.servicio, items=[(self.producto.pk, 1), (self.producto2.pk, 2)])
+        con_2, _r = consultas_del_listado()
         for _ in range(6):
             self.enviar(servicio=self.servicio, items=[(self.producto.pk, 1), (self.producto2.pk, 2)])
-        self.login(self.cliente)
-        with self.assertNumQueries(5):
-            r = self.client.get(reverse("solicitudes:mis_solicitudes"))
+        con_8, r = consultas_del_listado()
+        self.assertEqual(con_2, con_8)  # el número de consultas no crece con las filas
         self.assertContains(r, "Disyuntor 20A")
         self.login(self.admin)
-        r = self.client.get(reverse("panel:solicitudes"))
-        self.assertContains(r, "Productos")
+        self.assertContains(self.client.get(reverse("panel:solicitudes")), "Productos")
 
     def test_precio_referencia_se_congela(self):
         self.enviar(items=[(self.producto.pk, 1)])

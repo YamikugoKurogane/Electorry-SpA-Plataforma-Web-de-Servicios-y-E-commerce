@@ -25,9 +25,9 @@ h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); } h2 { font-size: 1.35rem; } h3 { fo
 .site-header { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 20; }
 .site-header a { color: #fff; text-decoration: none; }
 .site-header .bar { display: flex; align-items: center; gap: 1rem; min-height: 60px; }
-#barra-navegacion{ background-color:#13315c}
 .brand { font-weight: 800; font-size: 1.25rem; letter-spacing: .3px; display: flex; align-items: center; gap: .4rem; }
 .brand .bolt { color: var(--amber); }
+#barra-navegacion{ background-color:#13315c}
 .nav { display: flex; gap: .25rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .nav a, .nav button.linklike { padding: .5rem .75rem; border-radius: 8px; color: #fff; font-size: .95rem; }
 .nav a:hover, .nav button.linklike:hover { background: rgba(255,255,255,.12); color: #fff; }
@@ -95,6 +95,7 @@ main { padding: 1.5rem 0 3rem; min-height: 60vh; }
 .narrow { max-width: 520px; margin-inline: auto; } .medium { max-width: 760px; margin-inline: auto; }
 .filters { display: flex; gap: .6rem; flex-wrap: wrap; align-items: end; margin-bottom: 1rem; }
 .filters > div { flex: 1 1 150px; } .filters label { font-size: .8rem; font-weight: 600; display: block; margin-bottom: .15rem; }
+
 fieldset.items { border: 1px solid var(--line); border-radius: 8px; padding: .8rem 1rem 1rem; }
 fieldset.items legend { font-weight: 600; padding: 0 .4rem; }
 .item-row { display: grid; grid-template-columns: 1fr 7rem; gap: .6rem; margin-bottom: .5rem; }

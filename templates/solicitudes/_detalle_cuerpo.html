@@ -3,13 +3,21 @@
   <div class="card">
     <h2>Datos de la solicitud</h2>
     <dl class="meta">
-      <dt>Servicio</dt><dd>{{ solicitud.servicio.nombre }}</dd>
+      <dt>Servicio</dt><dd>{% if solicitud.servicio %}{{ solicitud.servicio.nombre }}{% else %}<span class="muted">No aplica (solo productos)</span>{% endif %}</dd>
       <dt>Fecha</dt><dd>{{ solicitud.creada|date:"d-m-Y H:i" }}</dd>
       <dt>Dirección</dt><dd>{{ solicitud.direccion }}{% if solicitud.comuna %}, {{ solicitud.comuna }}{% endif %}</dd>
       <dt>Contacto</dt><dd>{{ solicitud.nombre_contacto }}<br>{{ solicitud.telefono_contacto }}<br>{{ solicitud.email_contacto }}</dd>
     </dl>
+    {% if solicitud.items.all %}
+    <h3 style="margin-top:1rem">Productos solicitados</h3>
+    <div class="table-wrap"><table><thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio ref.</th><th class="num">Subtotal ref.</th></tr></thead><tbody>
+      {% for i in solicitud.items.all %}<tr><td>{{ i.nombre_producto }}</td><td class="num">{{ i.cantidad }}</td><td class="num">{{ i.precio_referencia|clp }}</td><td class="num">{{ i.subtotal_referencia|clp }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    <p class="muted small">Precios publicados (IVA incluido) al momento de solicitar. La cotización puede variar.</p>
+    {% endif %}
     <h3 style="margin-top:1rem">Descripción</h3>
     {{ solicitud.descripcion|linebreaks }}
+    {% if solicitud.observaciones %}<h3>Observaciones</h3>{{ solicitud.observaciones|linebreaks }}{% endif %}
     {% if adjuntos %}<h3>Adjuntos</h3><ul>{% for a in adjuntos %}<li><a href="{% url 'solicitudes:adjunto' a.pk %}" target="_blank" rel="noopener">{{ a.nombre_original }}</a> <span class="muted small">({{ a.tamano|filesizeformat }})</span></li>{% endfor %}</ul>{% endif %}
   </div>
   <div class="card">

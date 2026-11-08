@@ -9,6 +9,7 @@ app_name = "panel"
 
 urlpatterns = [
     path("", v.dashboard, name="dashboard"),
+    path("configuracion/", v.configuracion_sitio, name="configuracion"),
     # solicitudes
     path("solicitudes/", v.solicitudes_lista, name="solicitudes"),
     path("solicitudes/<int:pk>/", v.solicitud_detalle, name="solicitud_detalle"),

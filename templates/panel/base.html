@@ -14,6 +14,7 @@
     <a href="{% url 'panel:servicios' %}" class="{% if seccion == 'servicios' %}active{% endif %}">Servicios</a>
     <a href="{% url 'panel:productos' %}" class="{% if seccion == 'productos' %}active{% endif %}">Productos</a>
     <h4>Administración</h4>
+    <a href="{% url 'panel:pagos' %}" class="{% if seccion == 'pagos' %}active{% endif %}">Pagos</a>
     <a href="{% url 'panel:reportes' %}" class="{% if seccion == 'reportes' %}active{% endif %}">Reportes</a>
     <a href="{% url 'panel:usuarios' %}" class="{% if seccion == 'usuarios' %}active{% endif %}">Usuarios y roles</a>
     <a href="{% url 'panel:auditoria' %}" class="{% if seccion == 'auditoria' %}active{% endif %}">Auditoría</a>

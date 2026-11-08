@@ -11,7 +11,9 @@
     {% for etiqueta, n in solicitudes.por_estado %}<div class="bar-row"><span>{{ etiqueta }}</span><div class="bar"><span style="width:{% widthratio n maximo 100 %}%"></span></div><strong>{{ n }}</strong></div>{% endfor %}
     <h3 style="margin-top:1rem">Por mes</h3>{% for mes, n in solicitudes.por_mes %}<div class="small">{{ mes }}: <strong>{{ n }}</strong></div>{% empty %}<p class="muted small">Sin datos.</p>{% endfor %}</div>
   <div class="card"><h2>Servicios más solicitados</h2>
-    <table><tbody>{% for nombre, n in solicitudes.por_servicio %}<tr><td>{{ nombre }}</td><td class="num"><strong>{{ n }}</strong></td></tr>{% empty %}<tr><td class="muted">Sin datos.</td></tr>{% endfor %}</tbody></table></div>
+    <table><tbody>{% for nombre, n in solicitudes.por_servicio %}<tr><td>{{ nombre }}</td><td class="num"><strong>{{ n }}</strong></td></tr>{% empty %}<tr><td class="muted">Sin datos.</td></tr>{% endfor %}</tbody></table>
+    <h3 style="margin-top:1rem">Productos más cotizados</h3>
+    <table><thead><tr><th>Producto</th><th class="num">Unidades</th><th class="num">Solicitudes</th></tr></thead><tbody>{% for nombre, unidades, sols in solicitudes.por_producto %}<tr><td>{{ nombre }}</td><td class="num"><strong>{{ unidades }}</strong></td><td class="num">{{ sols }}</td></tr>{% empty %}<tr><td class="muted" colspan="3">Sin datos.</td></tr>{% endfor %}</tbody></table></div>
 </div>
 <div class="card"><h2>Cotizaciones ({{ cotizaciones.total }})</h2>
   <div class="table-wrap"><table><thead><tr><th>Estado</th><th class="num">Cantidad</th><th class="num">Neto</th><th class="num">Con IVA</th></tr></thead><tbody>

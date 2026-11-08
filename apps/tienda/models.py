@@ -107,4 +107,3 @@ class DetalleVenta(models.Model):
     @property
     def subtotal(self):
         return self.cantidad * self.precio_unitario
-

@@ -35,7 +35,7 @@ python manage.py runserver
 ```
 Con PostgreSQL: define `DATABASE_URL=postgres://usuario:clave@localhost:5432/electorry`.
 
-Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (153 pruebas; algunas se omiten según el motor de base de datos).
+Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (163 pruebas; algunas se omiten según el motor de base de datos).
 
 ## Base de datos en desarrollo (PostgreSQL)
 

@@ -2,13 +2,12 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
-
 from apps.catalogo.models import Servicio
 from apps.tienda.models import Producto
 from apps.usuarios.forms import validar_telefono
 
 from .models import Estado
-from .services import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD
+from .constants import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD
 from .validators import validar_adjunto
 
 

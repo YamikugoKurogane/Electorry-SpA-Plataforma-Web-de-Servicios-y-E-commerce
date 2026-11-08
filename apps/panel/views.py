@@ -4,7 +4,6 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from apps.auditoria import services as auditoria
@@ -14,11 +13,13 @@ from apps.catalogo.models import CategoriaServicio, Servicio
 from apps.core.forms import ConfiguracionSitioForm
 from apps.core.models import ConfiguracionSitio
 from apps.core.permisos import PERSONAL, SOLO_ADMIN, rol_requerido
+from apps.core.utils import fecha_o_none
 from apps.cotizaciones import services as cot_services
-from apps.cotizaciones.forms import CotizacionForm, LineaFormSet
+from apps.cotizaciones.forms import CotizacionForm, LineaFormSet, linea_formset
 from apps.cotizaciones.models import Cotizacion, EstadoCotizacion
 from apps.notificaciones import services as notif_services
 from apps.notificaciones.models import Notificacion
+from apps.pagos import services as pago_services
 from apps.solicitudes import services as sol_services
 from apps.solicitudes.forms import CambioEstadoForm
 from apps.solicitudes.models import Estado, SolicitudCotizacion
@@ -78,7 +79,7 @@ def dashboard(request):
     ctx = {
         "seccion": "dashboard",
         "tarjetas": [(Estado(e).label, n, e) for e, n in por_estado.items() if e not in ("CANCELADA",)],
-        "recientes": SolicitudCotizacion.objects.select_related("servicio").order_by("-creada")[:8],
+        "recientes": SolicitudCotizacion.objects.select_related("servicio").prefetch_related("items").order_by("-creada")[:8],
         "borradores": Cotizacion.objects.filter(estado=EstadoCotizacion.BORRADOR).count(),
         "ventas_pendientes": Venta.objects.filter(estado=EstadoVenta.PENDIENTE_PAGO).count(),
         "correos_pendientes": Notificacion.objects.filter(estado=Notificacion.Estado.PENDIENTE).count(),
@@ -90,11 +91,11 @@ def dashboard(request):
 # ================================================================= solicitudes (RF-05)
 @rol_requerido(*PERSONAL)
 def solicitudes_lista(request):
-    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente")
+    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items")
     q = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
     servicio = request.GET.get("servicio", "")
-    desde, hasta = parse_date(request.GET.get("desde", "") or ""), parse_date(request.GET.get("hasta", "") or "")
+    desde, hasta = fecha_o_none(request.GET.get("desde")), fecha_o_none(request.GET.get("hasta"))
     if q:
         cond = Q(nombre_contacto__icontains=q) | Q(email_contacto__icontains=q) | Q(descripcion__icontains=q) | Q(direccion__icontains=q)
         if q.upper().startswith("SOL-") and q[4:].isdigit():
@@ -172,7 +173,12 @@ def cotizacion_form(request, solicitud_id=None, pk=None):
         solicitud = get_object_or_404(SolicitudCotizacion, pk=solicitud_id)
         cot = Cotizacion(solicitud=solicitud)
     form = CotizacionForm(request.POST or None, instance=cot)
-    formset = LineaFormSet(request.POST or None, instance=cot)
+    sugeridas = []
+    if request.method == "POST" or pk:
+        formset = LineaFormSet(request.POST or None, instance=cot)
+    else:  # cotización nueva: se precargan los productos que pidió el cliente
+        sugeridas = cot_services.lineas_sugeridas(solicitud)
+        formset = linea_formset(extra=len(sugeridas) or 1)(instance=cot, initial=sugeridas)
     if request.method == "POST" and form.is_valid() and formset.is_valid():
         lineas = _lineas_validas(formset)
         try:
@@ -184,7 +190,7 @@ def cotizacion_form(request, solicitud_id=None, pk=None):
             return redirect("cotizaciones:detalle", pk=cot.pk)
         except cot_services.CotizacionError as exc:
             messages.error(request, str(exc))
-    return render(request, "panel/cotizacion_form.html", {"seccion": "cotizaciones", "form": form, "formset": formset, "solicitud": solicitud, "cot": cot if pk else None})
+    return render(request, "panel/cotizacion_form.html", {"seccion": "cotizaciones", "form": form, "formset": formset, "solicitud": solicitud, "cot": cot if pk else None, "sugeridas": bool(sugeridas)})
 
 
 @require_POST
@@ -218,7 +224,7 @@ def cliente_detalle(request, pk):
     return render(
         request, "panel/cliente_detalle.html",
         {"seccion": "clientes", "cliente": cliente,
-         "solicitudes": cliente.solicitudes.select_related("servicio"), "ventas": cliente.ventas.all()},
+         "solicitudes": cliente.solicitudes.select_related("servicio").prefetch_related("items"), "ventas": cliente.ventas.all()},
     )
 
 
@@ -372,7 +378,7 @@ def venta_accion(request, pk):
             venta_services.cancelar_venta(pk, request.user, request)
             messages.success(request, "Venta cancelada.")
         elif accion == "pagada_manual":
-            venta_services.marcar_pagada(pk, usuario=request.user, referencia="transferencia/manual", request=request)
+            pago_services.registrar_pago_manual(pk, request.user, "transferencia", request)
             messages.success(request, "Venta marcada como pagada (pago manual).")
     except venta_services.VentaError as exc:
         messages.error(request, str(exc))

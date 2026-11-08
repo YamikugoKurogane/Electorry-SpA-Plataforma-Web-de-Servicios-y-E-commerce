@@ -12,7 +12,8 @@ from apps.auditoria import services as auditoria
 from apps.notificaciones import services as notif
 from apps.usuarios.models import Rol
 
-from .models import Adjunto, Estado, HistorialEstado, SolicitudCotizacion
+from .constants import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD  # noqa: F401 (reexportadas)
+from .models import Adjunto, Estado, HistorialEstado, ItemSolicitud, SolicitudCotizacion
 
 log = logging.getLogger("electorry.solicitudes")
 
@@ -32,6 +33,36 @@ class TransicionInvalida(Exception):
     pass
 
 
+class SolicitudError(Exception):
+    """Datos de la solicitud inválidos (por ejemplo, no hay servicio ni productos)."""
+
+
+
+
+def _consolidar_items(items):
+    """Une productos repetidos y valida cantidades. Devuelve {producto_id: [producto, cantidad]}."""
+    consolidado = {}
+    for producto, cantidad in items:
+        try:
+            cantidad = int(cantidad)
+        except (TypeError, ValueError):
+            raise SolicitudError(f"Cantidad inválida para «{producto.nombre}».")
+        if cantidad < 1:
+            raise SolicitudError(f"La cantidad de «{producto.nombre}» debe ser al menos 1.")
+        if producto.pk in consolidado:
+            consolidado[producto.pk][1] += cantidad
+        else:
+            consolidado[producto.pk] = [producto, cantidad]
+    if len(consolidado) > MAX_PRODUCTOS_POR_SOLICITUD:
+        raise SolicitudError(f"Puedes cotizar hasta {MAX_PRODUCTOS_POR_SOLICITUD} productos distintos por solicitud.")
+    for producto, cantidad in consolidado.values():
+        if cantidad > MAX_CANTIDAD_POR_PRODUCTO:
+            raise SolicitudError(f"La cantidad máxima por producto es {MAX_CANTIDAD_POR_PRODUCTO} («{producto.nombre}»).")
+        if not producto.activo or not producto.categoria.activa:
+            raise SolicitudError(f"«{producto.nombre}» ya no está disponible.")
+    return consolidado
+
+
 def transiciones_permitidas(estado):
     orden = [e for e, _ in Estado.choices]
     return sorted(TRANSICIONES.get(estado, set()), key=orden.index)
@@ -42,7 +73,7 @@ def transiciones_permitidas(estado):
 
 def solicitudes_visibles_para(usuario):
     """Único punto de filtrado por propietario (S1, EC-01)."""
-    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente")
+    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items")
     if usuario.rol in (Rol.ADMIN, Rol.INTERNO):
         return qs
     return qs.filter(cliente=usuario)
@@ -66,11 +97,19 @@ def obtener_solicitud_para(usuario, pk, request=None):
 
 
 @transaction.atomic
-def crear_solicitud(*, cliente, servicio, datos, archivos=(), request=None):
+def crear_solicitud(*, cliente, servicio=None, datos, archivos=(), items=(), request=None):
+    """Crea una solicitud que cotiza un servicio, productos o ambos (RF-18).
+
+    `items` es un iterable de (producto, cantidad).
+    """
+    consolidado = _consolidar_items(items)
+    if servicio is None and not consolidado:
+        raise SolicitudError("Elige un servicio o agrega al menos un producto para cotizar.")
     solicitud = SolicitudCotizacion.objects.create(
         cliente=cliente,
         servicio=servicio,
         descripcion=datos["descripcion"],
+        observaciones=datos.get("observaciones", ""),
         direccion=datos["direccion"],
         comuna=datos.get("comuna", ""),
         nombre_contacto=datos["nombre_contacto"],
@@ -78,6 +117,10 @@ def crear_solicitud(*, cliente, servicio, datos, archivos=(), request=None):
         email_contacto=datos["email_contacto"],
         estado=Estado.PENDIENTE,
     )
+    ItemSolicitud.objects.bulk_create([
+        ItemSolicitud(solicitud=solicitud, producto=p, nombre_producto=p.nombre, cantidad=c, precio_referencia=p.precio)
+        for p, c in consolidado.values()
+    ])
     for archivo in archivos:
         Adjunto.objects.create(
             solicitud=solicitud, archivo=archivo, nombre_original=archivo.name[:150], tamano=archivo.size
@@ -86,20 +129,22 @@ def crear_solicitud(*, cliente, servicio, datos, archivos=(), request=None):
         solicitud=solicitud, estado_anterior="", estado_nuevo=Estado.PENDIENTE,
         usuario=cliente, usuario_nombre=cliente.nombre_completo or cliente.email, comentario="Solicitud creada",
     )
+    asunto = solicitud.asunto
     auditoria.registrar(
         usuario=cliente, accion=auditoria.Accion.CREAR, entidad="solicitud", entidad_id=solicitud.pk,
-        descripcion=f"Solicitud {solicitud.codigo} para «{servicio.nombre}»", despues={"estado": Estado.PENDIENTE}, request=request,
+        descripcion=f"Solicitud {solicitud.codigo}: {asunto}", despues={"estado": Estado.PENDIENTE, "productos": len(consolidado)}, request=request,
     )
+    detalle_items = "".join(f"\n- {c} × {p.nombre}" for p, c in consolidado.values())
     notif.notificar(
         solicitud.email_contacto,
         f"Recibimos tu solicitud {solicitud.codigo}",
-        f"Hola {solicitud.nombre_contacto},\n\nRecibimos tu solicitud de cotización {solicitud.codigo} "
-        f"para «{servicio.nombre}». Te contactaremos a la brevedad. Puedes revisar su estado en tu cuenta.\n\nElectorry SpA",
+        f"Hola {solicitud.nombre_contacto},\n\nRecibimos tu solicitud de cotización {solicitud.codigo}: "
+        f"{asunto}.{detalle_items}\n\nTe contactaremos a la brevedad. Puedes revisar su estado en tu cuenta.\n\nElectorry SpA",
         evento="solicitud_recibida",
     )
     notif.notificar_interno(
         f"Nueva solicitud {solicitud.codigo}",
-        f"{solicitud.nombre_contacto} solicitó cotización de «{servicio.nombre}».\n{solicitud.descripcion[:500]}",
+        f"{solicitud.nombre_contacto} solicitó cotización: {asunto}.{detalle_items}\n{solicitud.descripcion[:500]}",
         evento="solicitud_nueva",
     )
     return solicitud

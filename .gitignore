@@ -7,3 +7,6 @@ staticfiles/
 logs/
 backups/
 .venv/
+
+# Salidas de pruebas redirigidas desde PowerShell (UTF-16)
+pytest_out.txt

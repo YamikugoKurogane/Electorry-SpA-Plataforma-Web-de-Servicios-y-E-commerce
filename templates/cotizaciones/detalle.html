@@ -5,7 +5,7 @@
 <article class="card medium stack">
   <div class="row between"><div><h1 style="margin:0">Cotización {{ cot.codigo }}</h1><span class="muted">{{ EMPRESA.nombre }} · {{ cot.creada|date:"d-m-Y" }}</span></div>
     <span class="estado estado-{{ cot.estado|estado_css }}">{{ cot.get_estado_display }}</span></div>
-  <dl class="meta"><dt>Cliente</dt><dd>{{ cot.solicitud.nombre_contacto }}</dd><dt>Servicio</dt><dd>{{ cot.solicitud.servicio.nombre }}</dd>
+  <dl class="meta"><dt>Cliente</dt><dd>{{ cot.solicitud.nombre_contacto }}</dd><dt>Solicitud</dt><dd>{{ cot.solicitud.asunto }}</dd>
     <dt>Lugar</dt><dd>{{ cot.solicitud.direccion }}</dd>{% if cot.validez_hasta %}<dt>Válida hasta</dt><dd>{{ cot.validez_hasta|date:"d-m-Y" }}</dd>{% endif %}</dl>
   <div class="table-wrap"><table>
     <thead><tr><th>Descripción</th><th class="num">Cant.</th><th class="num">P. unitario</th><th class="num">Subtotal</th></tr></thead>

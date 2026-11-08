@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.auditoria.models import RegistroAuditoria
 from apps.catalogo.models import Servicio
+from apps.core.models import ConfiguracionSitio
 from apps.cotizaciones import services as cot
 from apps.solicitudes import services as sol
 from apps.solicitudes.models import Estado
@@ -45,7 +46,7 @@ class CatalogoPublicoTests(BaseTest):
     def test_catalogo_rendimiento_consultas_constantes(self):  # RNF-PER-02, EC-05
         for i in range(8):
             Servicio.objects.create(categoria=self.servicio.categoria, nombre=f"X{i}", resumen="r", descripcion="d")
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             self.client.get(reverse("catalogo:lista"))
 
     def test_productos_publicos(self):
@@ -61,6 +62,67 @@ class CatalogoPublicoTests(BaseTest):
 
 
 class PanelCrudTests(BaseTest):
+    def test_configuracion_sitio_y_datos_publicos(self):
+        self.login(self.admin)
+        url = reverse("panel:configuracion")
+        r = self.client.post(url, {
+            "nombre": "Electorry Servicios",
+            "eslogan": "Atención eléctrica",
+            "email": "hola@electorry.cl",
+            "telefono": "+56 9 1234 5678",
+            "whatsapp": "56912345678",
+            "direccion": "Melipilla, Chile",
+            "titulo_inicio": "Atención cercana",
+            "texto_inicio": "Estamos para ayudarte.",
+        })
+        self.assertRedirects(r, url)
+        self.assertEqual(ConfiguracionSitio.objects.get(pk=1).nombre, "Electorry Servicios")
+        self.assertContains(self.client.get("/"), "Atención cercana")
+        self.assertContains(self.client.get("/"), "Estamos para ayudarte.")
+        self.assertContains(self.client.get("/"), "hola@electorry.cl")
+        self.assertContains(self.client.get("/"), "+56 9 1234 5678")
+        self.assertContains(self.client.get("/"), "Melipilla, Chile")
+        self.assertContains(self.client.get("/"), "56912345678")
+        self.assertTrue(
+            RegistroAuditoria.objects.filter(entidad="configuracion_sitio", accion="CREAR", entidad_id=1).exists()
+        )
+        data = {
+            "nombre": "Electorry Servicios",
+            "eslogan": "Atención eléctrica",
+            "email": "hola@electorry.cl",
+            "telefono": "+56 9 1234 5678",
+            "whatsapp": "56912345678",
+            "direccion": "Melipilla, Chile",
+            "titulo_inicio": "Confianza eléctrica",
+            "texto_inicio": "Cotiza con nosotros.",
+        }
+        self.assertRedirects(self.client.post(url, data), url)
+        self.assertEqual(ConfiguracionSitio.objects.get(pk=1).titulo_inicio, "Confianza eléctrica")
+        self.assertTrue(
+            RegistroAuditoria.objects.filter(entidad="configuracion_sitio", accion="EDITAR", entidad_id=1).exists()
+        )
+
+    def test_whatsapp_debe_ser_numerico(self):
+        self.login(self.admin)
+        r = self.client.post(reverse("panel:configuracion"), {
+            "nombre": "Electorry SpA",
+            "eslogan": "Servicios",
+            "email": "contacto@electorry.cl",
+            "telefono": "123",
+            "whatsapp": "+56912345678",
+            "direccion": "Chile",
+            "titulo_inicio": "Título",
+            "texto_inicio": "Texto",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(ConfiguracionSitio.objects.exists())
+
+    def test_configuracion_solo_admin(self):
+        self.login(self.cliente)
+        self.assertEqual(self.client.get(reverse("panel:configuracion")).status_code, 403)
+        self.login(self.interno)
+        self.assertEqual(self.client.get(reverse("panel:configuracion")).status_code, 403)
+
     def test_crud_servicios_con_auditoria(self):  # RF-06
         self.login(self.admin)
         r = self.client.post(reverse("panel:servicio_crear"), {"categoria": self.servicio.categoria_id, "nombre": "Nuevo servicio", "resumen": "r", "descripcion": "d", "disponible": "on"})

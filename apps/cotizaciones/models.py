@@ -75,4 +75,3 @@ class LineaCotizacion(models.Model):
 def total_neto_queryset(qs):
     """Suma neta de un queryset de cotizaciones (para reportes)."""
     return qs.aggregate(t=Sum(F("lineas__cantidad") * F("lineas__precio_unitario")))["t"] or 0
-

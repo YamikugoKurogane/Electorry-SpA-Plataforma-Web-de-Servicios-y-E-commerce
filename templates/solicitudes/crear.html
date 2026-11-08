@@ -3,9 +3,30 @@
 {% block content %}
 <div class="card medium">
   <h1>Solicitar cotización</h1>
-  <p class="muted">Cuéntanos qué necesitas. Responderemos por correo y podrás seguir el estado desde tu cuenta.</p>
+  <p class="muted">Cotiza un servicio, productos o ambos. Responderemos por correo y podrás seguir el estado desde tu cuenta.</p>
   <form method="post" enctype="multipart/form-data" class="form" novalidate data-once>{% csrf_token %}
-    {% include "partials/form.html" %}
+    {% if form.non_field_errors %}<div class="alert error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+    {% include "partials/campo.html" with field=form.servicio %}
+
+    <fieldset class="items">
+      <legend>Productos que quieres cotizar <span class="muted small">(opcional si eliges un servicio)</span></legend>
+      {{ items_fs.management_form }}
+      {% if items_fs.non_form_errors %}<div class="errors">{{ items_fs.non_form_errors|join:" " }}</div>{% endif %}
+      <div id="items">
+        {% for f in items_fs %}
+        <div class="item-row">
+          <div class="field {% if f.producto.errors %}has-error{% endif %}">{{ f.producto }}<div class="errors">{{ f.producto.errors|join:" " }}</div></div>
+          <div class="field {% if f.cantidad.errors %}has-error{% endif %}">{{ f.cantidad }}<div class="errors">{{ f.cantidad.errors|join:" " }}</div></div>
+        </div>
+        {% endfor %}
+      </div>
+      <template id="item-vacio"><div class="item-row">
+        <div class="field">{{ items_fs.empty_form.producto }}</div><div class="field">{{ items_fs.empty_form.cantidad }}</div></div></template>
+      <button type="button" id="add-item" class="btn ghost small">+ Agregar otro producto</button>
+    </fieldset>
+
+    {% for field in form.visible_fields %}{% if field.name != "servicio" %}{% include "partials/campo.html" %}{% endif %}{% endfor %}
     <p class="small muted">Al enviar aceptas que usemos estos datos para responder tu solicitud, según nuestro <a href="{% url 'core:privacidad' %}" target="_blank">aviso de privacidad</a>.</p>
     <div><button class="btn" type="submit">Enviar solicitud</button></div>
   </form>

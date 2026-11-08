@@ -9,6 +9,7 @@
     {{ producto.descripcion|linebreaks }}
     <form method="post" action="{% url 'tienda:carrito_agregar' producto.pk %}" class="row">{% csrf_token %}
       <input type="number" name="cantidad" value="1" min="1" max="50" style="width:5rem;padding:.55rem;border:1px solid #c7d0dc;border-radius:8px" aria-label="Cantidad">
-      <input type="hidden" name="next" value="{% url 'tienda:carrito' %}"><button class="btn" type="submit">Agregar al carrito</button></form></div>
+      <input type="hidden" name="next" value="{% url 'tienda:carrito' %}"><button class="btn" type="submit">Agregar al carrito</button></form>
+    {% if not user.is_authenticated or user.es_cliente %}<p><a class="btn ghost" href="{% url 'solicitudes:crear' %}?producto={{ producto.pk }}">Solicitar cotización de este producto</a></p>{% endif %}</div>
 </div></article>
 {% endblock %}

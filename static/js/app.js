@@ -43,7 +43,7 @@
       total.value = n + 1;
     });
   }
-    // 4) Agregar filas de producto en la solicitud de cotización.
+  // 4) Agregar filas de producto en la solicitud de cotización.
   var addItem = document.getElementById("add-item");
   if (addItem) {
     addItem.addEventListener("click", function () {

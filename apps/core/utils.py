@@ -27,7 +27,6 @@ def formatear_clp(valor):
     except (TypeError, ValueError):
         return "$0"
 
-    
 
 def csv_seguro(valor):
     """Evita la inyección de fórmulas: Excel ejecuta celdas que empiezan con = + - @ (datos escritos por usuarios)."""

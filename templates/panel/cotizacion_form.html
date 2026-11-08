@@ -3,6 +3,7 @@
 <p class="small"><a href="{% url 'panel:solicitud_detalle' solicitud.pk %}">← {{ solicitud.codigo }}</a></p>
 <div class="card" style="margin:0"><h1>{% if cot %}Editar {{ cot.codigo }}{% else %}Nueva cotización{% endif %} · {{ solicitud.codigo }}</h1>
 <p class="muted">Precios netos en pesos chilenos. El IVA se calcula automáticamente.</p>
+{% if sugeridas %}<div class="alert info">Precargamos los productos que pidió el cliente. El precio es el publicado <strong>sin IVA</strong>; revísalo, ajústalo o elimina líneas antes de guardar.</div>{% endif %}
 <form method="post" class="form" novalidate data-once>{% csrf_token %}
   {% include "partials/form.html" %}
   <h2>Líneas</h2>
