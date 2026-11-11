@@ -16,6 +16,8 @@ from .constants import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD  #
 from .models import Adjunto, Estado, HistorialEstado, ItemSolicitud, SolicitudCotizacion
 
 log = logging.getLogger("electorry.solicitudes")
+MAX_CANTIDAD_POR_PRODUCTO = 100
+MAX_PRODUCTOS_POR_SOLICITUD = 50
 
 # Máquina de estados. Agregar un estado = editar este diccionario y `Estado` (EC-09).
 TRANSICIONES = {
