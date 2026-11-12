@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Nueva contraseña · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Elige una contraseña nueva</h1>
+  <form method="post" class="form" novalidate data-once>{% csrf_token %}
+    {% include "partials/form.html" %}
+    <button class="btn" type="submit">Guardar contraseña</button>
+  </form>
+</div>
+{% endblock %}

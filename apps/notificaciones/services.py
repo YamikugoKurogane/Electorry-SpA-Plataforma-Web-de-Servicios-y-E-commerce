@@ -9,6 +9,10 @@ from .models import Notificacion
 
 log = logging.getLogger("electorry.notificaciones")
 
+# Evento cuyo cuerpo trae un enlace de un solo uso: una vez enviado el correo se borra el cuerpo
+# para que no quede un enlace de acceso a la cuenta guardado en la base (ni visible en el admin).
+EVENTO_RECUPERACION = "recuperar_password"
+
 
 def notificar(destinatario, asunto, cuerpo, evento=""):
     """Encola un correo y lo intenta enviar cuando la transacción actual se confirme.
@@ -49,6 +53,8 @@ def intentar_envio(pk):
                 return False
             n.estado = Notificacion.Estado.ENVIADA
             n.enviada_en = timezone.now()
+            if n.evento == EVENTO_RECUPERACION:
+                n.cuerpo = "[Contenido omitido: incluía un enlace de un solo uso]"
             n.ultimo_error = ""
             n.save()
             return True

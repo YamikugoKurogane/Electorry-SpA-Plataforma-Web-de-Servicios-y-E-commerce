@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Enlace no válido · {{ EMPRESA.nombre }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Enlace no válido</h1>
+  <p>Este enlace no es válido o ya venció. Los enlaces valen un tiempo limitado y se pueden usar una sola vez.</p>
+  <p><a class="btn" href="{% url 'usuarios:recuperar_password' %}">Pedir un enlace nuevo</a></p>
+</div>
+{% endblock %}

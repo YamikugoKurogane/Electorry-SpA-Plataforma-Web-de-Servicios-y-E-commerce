@@ -14,6 +14,7 @@ class Accion:
     LOGIN_FALLIDO = "LOGIN_FALLIDO"
     ACCESO_DENEGADO = "ACCESO_DENEGADO"
     PRIVACIDAD = "PRIVACIDAD"
+    RECUPERAR_PASSWORD = "RECUPERAR_PASSWORD"
 
 
 def registrar(*, usuario=None, accion, entidad, entidad_id=None, descripcion="", antes=None, despues=None, request=None):

@@ -150,6 +150,14 @@ class LoginForm(AuthenticationForm):
         return datos
 
 
+class RecuperarPasswordForm(forms.Form):
+    """Paso 1 de la recuperación de contraseña: pedir el enlace por correo."""
+
+    email = forms.EmailField(
+        label="Correo electrónico", widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"})
+    )
+
+
 class PerfilForm(forms.ModelForm):
     """Rectificación de datos personales (RNF-SEG-07)."""
 
