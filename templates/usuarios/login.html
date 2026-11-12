@@ -8,6 +8,7 @@
     <input type="hidden" name="next" value="{{ next }}">
     <button class="btn" type="submit">Ingresar</button>
   </form>
-  <p class="muted small" style="margin-top:1rem">¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear cuenta</a></p>
+  <p class="muted small" style="margin-top:1rem"><a href="{% url 'usuarios:recuperar_password' %}">¿Olvidaste tu contraseña?</a></p>
+  <p class="muted small">¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear cuenta</a></p>
 </div>
 {% endblock %}

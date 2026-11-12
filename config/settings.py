@@ -145,6 +145,10 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_MAX_INTENTOS = int(env("LOGIN_MAX_INTENTOS", "5"))
 LOGIN_MAX_INTENTOS_IP = int(env("LOGIN_MAX_INTENTOS_IP", "30"))
 LOGIN_VENTANA_MINUTOS = int(env("LOGIN_VENTANA_MINUTOS", "15"))
+# Recuperación de contraseña por enlace al correo
+PASSWORD_RESET_TIMEOUT = int(env("PASSWORD_RESET_TIMEOUT", "3600"))  # vigencia del enlace, en segundos
+RECUPERACION_MAX_SOLICITUDES = int(env("RECUPERACION_MAX_SOLICITUDES", "3"))  # por correo y por hora
+RECUPERACION_MAX_SOLICITUDES_IP = int(env("RECUPERACION_MAX_SOLICITUDES_IP", "20"))  # por IP y por hora
 # Activar solo si hay un proxy de confianza (Nginx) delante de Gunicorn.
 USE_X_FORWARDED_FOR = env_bool("USE_X_FORWARDED_FOR", False)
 
