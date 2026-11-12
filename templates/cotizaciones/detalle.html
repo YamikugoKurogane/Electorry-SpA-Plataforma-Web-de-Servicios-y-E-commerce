@@ -22,10 +22,25 @@
       <a class="btn secondary" href="{% url 'panel:cotizacion_editar' cot.pk %}">Editar</a>
       <form method="post" action="{% url 'panel:cotizacion_enviar' cot.pk %}" data-once>{% csrf_token %}<button class="btn" type="submit">Enviar al cliente</button></form>
     {% endif %}
-    {% if user.es_cliente and cot.estado == "ENVIADA" %}
+        {% if user.es_cliente and cot.estado == "ENVIADA" %}
       <form method="post" action="{% url 'cotizaciones:responder' cot.pk %}" class="row" data-once>{% csrf_token %}
-        <button class="btn" name="accion" value="aceptar" type="submit">Aceptar</button><button class="btn ghost" name="accion" value="rechazar" type="submit">Rechazar</button></form>
+        <button class="btn" name="accion" value="aceptar" type="submit">Aceptar</button>
+        <button class="btn ghost" name="accion" value="rechazar" type="submit">Rechazar</button>
+      </form>
     {% endif %}
+    
+    {# --- NUEVO BOTÓN DE PAGO (S4-A3) --- #}
+    {% if user.es_cliente and cot.estado == "ACEPTADA" and not cot.venta %}
+      <a class="btn" style="background-color: #198754; color: white;" href="{% url 'cotizaciones:pagar_cotizacion' cot.pk %}">
+        Pagar esta Cotización
+      </a>
+    {% elif cot.estado == "ACEPTADA" and cot.venta %}
+      <div class="alert alert-info" style="margin-top: 15px; padding: 10px; background: #e2e3e5; border-radius: 5px;">
+        Esta cotización ya tiene una venta asociada (Venta #{{ cot.venta.id }}).
+      </div>
+    {% endif %}
+    {# --- FIN NUEVO BOTÓN --- #}
+
   </div>
 </article>
 {% endblock %}

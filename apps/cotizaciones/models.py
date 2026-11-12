@@ -17,6 +17,13 @@ class Cotizacion(models.Model):
     """RF-08: cotización asociada a una solicitud. Montos en pesos chilenos (enteros)."""
 
     solicitud = models.ForeignKey("solicitudes.SolicitudCotizacion", on_delete=models.PROTECT, related_name="cotizaciones")
+    venta = models.OneToOneField(
+        "tienda.Venta", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="cotizacion_origen"
+    )
     estado = models.CharField(max_length=12, choices=EstadoCotizacion.choices, default=EstadoCotizacion.BORRADOR, db_index=True)
     validez_hasta = models.DateField("válida hasta", null=True, blank=True)
     observaciones = models.TextField(blank=True)
