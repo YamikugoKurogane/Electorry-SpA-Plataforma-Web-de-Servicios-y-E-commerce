@@ -98,6 +98,9 @@ class DetalleVenta(models.Model):
     nombre_producto = models.CharField(max_length=150)  # se congela el nombre y precio al comprar
     cantidad = models.PositiveIntegerField()
     precio_unitario = models.PositiveIntegerField()
+    # Precio de lista y oferta aplicada al comprar (0 / vacío en compras anteriores a las ofertas)
+    precio_lista = models.PositiveIntegerField(default=0)
+    oferta_titulo = models.CharField(max_length=120, blank=True)
 
     class Meta:
         constraints = [
@@ -107,3 +110,11 @@ class DetalleVenta(models.Model):
     @property
     def subtotal(self):
         return self.cantidad * self.precio_unitario
+
+    @property
+    def con_oferta(self):
+        return bool(self.oferta_titulo) and self.precio_lista > self.precio_unitario
+
+    @property
+    def ahorro(self):
+        return (self.precio_lista - self.precio_unitario) * self.cantidad if self.con_oferta else 0

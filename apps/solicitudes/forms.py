@@ -8,6 +8,7 @@ from apps.usuarios.forms import validar_telefono
 
 from .models import Estado
 from .constants import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD
+from .requerimientos import MAX_PREGUNTA, MAX_RESPUESTA
 from .validators import validar_adjunto
 
 
@@ -105,3 +106,25 @@ class CambioEstadoForm(forms.Form):
     def __init__(self, *args, permitidos=(), **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["estado"].choices = [(e, Estado(e).label) for e in permitidos]
+
+
+class PedirInfoForm(forms.Form):
+    """El personal pregunta algo al cliente dentro de la solicitud (RF-25)."""
+
+    pregunta = forms.CharField(
+        label="¿Qué información necesitas del cliente?", max_length=MAX_PREGUNTA, widget=forms.Textarea(attrs={"rows": 3}),
+        error_messages={"required": "Escribe qué información necesitas.", "max_length": f"Máximo {MAX_PREGUNTA} caracteres."},
+    )
+
+
+class ResponderInfoForm(forms.Form):
+    """El cliente responde con texto y/o archivos (cada respuesta se valida igual que los adjuntos de la solicitud)."""
+
+    respuesta = forms.CharField(
+        label="Tu respuesta", required=False, max_length=MAX_RESPUESTA, widget=forms.Textarea(attrs={"rows": 3}),
+        error_messages={"max_length": f"Máximo {MAX_RESPUESTA} caracteres."},
+    )
+    archivos = MultipleFileField(
+        label="Fotos o documentos (opcional)", required=False,
+        help_text="JPG, PNG o PDF. Hasta 5 archivos de 5 MB cada uno.",
+    )

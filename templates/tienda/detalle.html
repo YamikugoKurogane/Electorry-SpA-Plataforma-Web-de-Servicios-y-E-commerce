@@ -5,7 +5,8 @@
 <article class="card medium"><div class="grid cols-2">
   <div class="thumb" style="aspect-ratio:1">{% if producto.imagen %}<img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">{% else %}🔌{% endif %}</div>
   <div class="stack"><span class="pill">{{ producto.categoria }}</span><h1>{{ producto.nombre }}</h1>
-    <p class="price" style="font-size:1.8rem">{{ producto.precio|clp }} <span class="muted small" style="font-weight:400">IVA incluido</span></p>
+    <p style="font-size:1.8rem;margin:.2rem 0">{% include "ofertas/_precio.html" with pv=producto.pv %} <span class="muted small" style="font-weight:400">IVA incluido</span></p>
+    {% if producto.pv.con_oferta %}<p class="small" style="margin:0"><span class="pill">Oferta: {{ producto.pv.oferta.titulo }}</span> <span class="muted">hasta el {{ producto.pv.oferta.fecha_fin|date:"d-m-Y" }}</span></p>{% endif %}
     {{ producto.descripcion|linebreaks }}
     <form method="post" action="{% url 'tienda:carrito_agregar' producto.pk %}" class="row">{% csrf_token %}
       <input type="number" name="cantidad" value="1" min="1" max="50" style="width:5rem;padding:.55rem;border:1px solid #c7d0dc;border-radius:8px" aria-label="Cantidad">

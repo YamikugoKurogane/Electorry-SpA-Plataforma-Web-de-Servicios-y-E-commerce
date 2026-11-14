@@ -8,7 +8,7 @@
   <tbody>
   {% for s in pagina %}
     <tr><td><a href="{{ s.get_absolute_url }}"><strong>{{ s.codigo }}</strong></a></td><td>{{ s.asunto }}</td><td>{{ s.creada|date:"d-m-Y H:i" }}</td>
-      <td><span class="estado estado-{{ s.estado|estado_css }}">{{ s.get_estado_display }}</span></td><td class="right"><a class="btn ghost small" href="{{ s.get_absolute_url }}">Ver</a></td></tr>
+      <td><span class="estado estado-{{ s.estado|estado_css }}">{{ s.get_estado_display }}</span>{% if s.info_pendiente %} <span class="estado estado-info-pendiente" title="Te pedimos más información">Responder</span>{% endif %}</td><td class="right"><a class="btn ghost small" href="{{ s.get_absolute_url }}">Ver</a></td></tr>
   {% empty %}<tr><td colspan="5" class="empty">Aún no tienes solicitudes. <a href="{% url 'solicitudes:crear' %}">Crea la primera</a>.</td></tr>{% endfor %}
   </tbody>
 </table>

@@ -1,0 +1,1 @@
+{% load electorry %}{% if pv.con_oferta %}<span class="price precio-oferta">{{ pv.precio|clp }}</span> <s class="muted small">{{ pv.precio_lista|clp }}</s> <span class="badge-oferta">−{{ pv.descuento }}%</span>{% else %}<span class="price">{{ pv.precio_lista|clp }}</span>{% endif %}

@@ -23,6 +23,8 @@ class SolicitudCotizacion(models.Model):
     servicio = models.ForeignKey("catalogo.Servicio", on_delete=models.PROTECT, related_name="solicitudes", null=True, blank=True)
     descripcion = models.TextField("descripción del requerimiento")
     observaciones = models.TextField("observaciones", blank=True)
+    # Ofertas vigentes que se consideraron al solicitar (texto congelado; no depende de que la oferta siga existiendo)
+    oferta_aplicada = models.TextField("ofertas consideradas", blank=True)
     direccion = models.CharField("dirección / ubicación", max_length=250)
     comuna = models.CharField(max_length=100, blank=True)
     nombre_contacto = models.CharField(max_length=150)
@@ -60,6 +62,11 @@ class SolicitudCotizacion(models.Model):
                 return f"{self.servicio.nombre} + productos: {nombres}"
             return f"Productos: {nombres}"
         return self.servicio.nombre if self.servicio_id else "Solicitud"
+
+    @property
+    def info_pendiente(self):
+        """Cantidad de preguntas sin responder. Usa `requerimientos` precargados (prefetch) para no consultar por fila."""
+        return sum(1 for r in self.requerimientos.all() if r.estado == EstadoRequerimiento.PENDIENTE) if self.pk else 0
 
     @property
     def tipo(self):
@@ -103,6 +110,8 @@ def ruta_adjunto(instancia, nombre):
 
 class Adjunto(models.Model):
     solicitud = models.ForeignKey(SolicitudCotizacion, on_delete=models.CASCADE, related_name="adjuntos")
+    # Si no es nulo, el archivo se envió como respuesta a una solicitud de información adicional (RF-25)
+    requerimiento = models.ForeignKey("RequerimientoInfo", null=True, blank=True, on_delete=models.CASCADE, related_name="adjuntos")
     archivo = models.FileField(upload_to=ruta_adjunto, max_length=200)
     nombre_original = models.CharField(max_length=150)
     tamano = models.PositiveIntegerField(default=0)
@@ -117,6 +126,58 @@ class Adjunto(models.Model):
     @property
     def es_imagen(self):
         return self.archivo.name.lower().endswith((".jpg", ".jpeg", ".png"))
+
+
+class EstadoRequerimiento(models.TextChoices):
+    PENDIENTE = "PENDIENTE", "Pendiente de respuesta"
+    RESPONDIDO = "RESPONDIDO", "Respondido"
+    CANCELADO = "CANCELADO", "Cancelado"
+
+
+class RequerimientoInfo(models.Model):
+    """RF-25: el personal pide datos adicionales al cliente dentro de la solicitud y el cliente responde."""
+
+    solicitud = models.ForeignKey(SolicitudCotizacion, on_delete=models.CASCADE, related_name="requerimientos")
+    pregunta = models.TextField()
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    creado_por_nombre = models.CharField(max_length=150, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    respuesta = models.TextField(blank=True)
+    respondido_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    respondido_en = models.DateTimeField(null=True, blank=True)
+    cancelado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    cancelado_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["creado", "id"]
+        verbose_name = "requerimiento de información"
+        verbose_name_plural = "requerimientos de información"
+        indexes = [models.Index(fields=["solicitud", "respondido_en", "cancelado_en"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(respondido_en__isnull=True) | models.Q(cancelado_en__isnull=True),
+                name="requerimiento_no_respondido_y_cancelado",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Información adicional {self.pk} de {self.solicitud_id}"
+
+    @property
+    def estado(self):
+        if self.respondido_en:
+            return EstadoRequerimiento.RESPONDIDO
+        if self.cancelado_en:
+            return EstadoRequerimiento.CANCELADO
+        return EstadoRequerimiento.PENDIENTE
+
+    @property
+    def get_estado_display(self):
+        return EstadoRequerimiento(self.estado).label
+
+    @property
+    def pendiente(self):
+        return self.estado == EstadoRequerimiento.PENDIENTE
 
 
 class HistorialEstado(models.Model):

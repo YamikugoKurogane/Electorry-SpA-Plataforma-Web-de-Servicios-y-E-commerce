@@ -40,3 +40,25 @@
 - **Exportaciones CSV:** se neutralizan celdas que empiezan con `= + - @` (inyección de fórmulas en Excel).
 - **Respaldos:** retención mínima de 7 días (el script rechaza menos); se conservan siempre los últimos 3 respaldos. Los respaldos están en el mismo servidor: hay que copiarlos fuera (riesgo documentado).
 - **Pendiente de validar:** el ciclo respaldo → restauración se probó contra PostgreSQL real fuera de Docker; falta ejecutarlo en el staging real con `docker compose`.
+
+## Decisiones del sprint 4
+**Ofertas (RF-16, RF-17)**
+- Solo **descuento porcentual** (1 a 90 %). Un tope de 90 % evita errores de digitación; un descuento fijo en pesos queda para una fase posterior.
+- **El precio con oferta se aplica de verdad** (tarjeta, ficha, carrito, venta, solicitud). Mostrar un descuento que luego no se cobra sería publicidad engañosa (Ley 19.496). El precio se calcula siempre en el servidor y se congela en la venta (`precio_lista`, `oferta_titulo`).
+- **Sin acumulación:** si varias ofertas vigentes afectan a un producto, se usa la de mayor descuento (empate: la más antigua).
+- **Servicios:** no tienen precio publicado, por lo que su oferta es informativa: se muestra al cliente, se guarda en la solicitud (`oferta_aplicada`) y se avisa al administrador al cotizar.
+- **«Ofertas que le corresponden» (RF-17):** se interpretó como las ofertas vigentes visibles para quien mira; las marcadas «solo clientes» exigen sesión iniciada. **Pendiente de confirmar con Electorry** si se necesita segmentar por otro criterio.
+- **Vigencia por fechas inclusivas** (hora de Chile). **Finalizar es irreversible**; una oferta vencida se «reabre» ampliando su fecha de término.
+- Las ofertas no se eliminan (así se conserva la trazabilidad de lo cobrado); todo cambio queda en la auditoría.
+- **Límite conocido:** la API pública (`/api/v1/productos/`) sigue mostrando el precio de lista.
+- Si el precio cambia entre que el cliente ve el carrito y confirma (por ejemplo, termina la oferta), la venta usa el precio vigente al momento de confirmar.
+
+**Información adicional (RF-25)**
+- Cada pregunta se responde **una sola vez**; si falta algo, se pregunta de nuevo. Máximo 5 preguntas pendientes por solicitud.
+- Al preguntar, una solicitud «Pendiente» pasa a «En revisión» (igual que al enviar una cotización).
+- Las respuestas pueden llevar archivos con las mismas validaciones que los adjuntos de la solicitud; se guardan junto a su pregunta.
+- Si la solicitud se cancela o finaliza, las preguntas pendientes se cancelan solas.
+- Al anonimizar a un cliente se borran sus respuestas y archivos; se conserva lo que escribió el personal.
+
+**Correcciones al código existente**
+- `solicitudes/services.py` redefinía `MAX_CANTIDAD_POR_PRODUCTO = 100` y `MAX_PRODUCTOS_POR_SOLICITUD = 50`, pisando los valores de `constants.py` (999 y 20) que usa el formulario: el formulario aceptaba lo que el servicio rechazaba. Ahora `constants.py` es la única fuente.

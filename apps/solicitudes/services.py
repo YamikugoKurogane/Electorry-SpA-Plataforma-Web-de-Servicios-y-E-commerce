@@ -6,18 +6,18 @@ historial, auditoría y notificaciones dentro de una única transacción.
 import logging
 
 from django.db import transaction
+from django.utils import timezone
 from django.http import Http404
 
 from apps.auditoria import services as auditoria
 from apps.notificaciones import services as notif
+from apps.ofertas import services as ofertas
 from apps.usuarios.models import Rol
 
 from .constants import MAX_CANTIDAD_POR_PRODUCTO, MAX_PRODUCTOS_POR_SOLICITUD  # noqa: F401 (reexportadas)
-from .models import Adjunto, Estado, HistorialEstado, ItemSolicitud, SolicitudCotizacion
+from .models import Adjunto, Estado, HistorialEstado, ItemSolicitud, RequerimientoInfo, SolicitudCotizacion
 
 log = logging.getLogger("electorry.solicitudes")
-MAX_CANTIDAD_POR_PRODUCTO = 100
-MAX_PRODUCTOS_POR_SOLICITUD = 50
 
 # Máquina de estados. Agregar un estado = editar este diccionario y `Estado` (EC-09).
 TRANSICIONES = {
@@ -75,7 +75,7 @@ def transiciones_permitidas(estado):
 
 def solicitudes_visibles_para(usuario):
     """Único punto de filtrado por propietario (S1, EC-01)."""
-    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items")
+    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items", "requerimientos")
     if usuario.rol in (Rol.ADMIN, Rol.INTERNO):
         return qs
     return qs.filter(cliente=usuario)
@@ -107,9 +107,17 @@ def crear_solicitud(*, cliente, servicio=None, datos, archivos=(), items=(), req
     consolidado = _consolidar_items(items)
     if servicio is None and not consolidado:
         raise SolicitudError("Elige un servicio o agrega al menos un producto para cotizar.")
+    # Precios y ofertas vigentes para este cliente, calculados en el servidor (los mismos que vio en pantalla)
+    precios = ofertas.precios_vigentes([p for p, _ in consolidado.values()], cliente)
+    usadas = {pv.oferta.pk: pv.oferta for pv in precios.values() if pv.con_oferta}
+    oferta_servicio = ofertas.ofertas_de_servicios([servicio], cliente).get(servicio.pk) if servicio else None
+    if oferta_servicio:
+        usadas[oferta_servicio.pk] = oferta_servicio
+    oferta_aplicada = "\n".join(ofertas.descripcion_oferta(o) for _, o in sorted(usadas.items()))
     solicitud = SolicitudCotizacion.objects.create(
         cliente=cliente,
         servicio=servicio,
+        oferta_aplicada=oferta_aplicada,
         descripcion=datos["descripcion"],
         observaciones=datos.get("observaciones", ""),
         direccion=datos["direccion"],
@@ -120,7 +128,7 @@ def crear_solicitud(*, cliente, servicio=None, datos, archivos=(), items=(), req
         estado=Estado.PENDIENTE,
     )
     ItemSolicitud.objects.bulk_create([
-        ItemSolicitud(solicitud=solicitud, producto=p, nombre_producto=p.nombre, cantidad=c, precio_referencia=p.precio)
+        ItemSolicitud(solicitud=solicitud, producto=p, nombre_producto=p.nombre, cantidad=c, precio_referencia=precios[p.pk].precio)
         for p, c in consolidado.values()
     ])
     for archivo in archivos:
@@ -137,6 +145,8 @@ def crear_solicitud(*, cliente, servicio=None, datos, archivos=(), items=(), req
         descripcion=f"Solicitud {solicitud.codigo}: {asunto}", despues={"estado": Estado.PENDIENTE, "productos": len(consolidado)}, request=request,
     )
     detalle_items = "".join(f"\n- {c} × {p.nombre}" for p, c in consolidado.values())
+    if oferta_aplicada:
+        detalle_items += f"\n\nOfertas consideradas:\n{oferta_aplicada}"
     notif.notificar(
         solicitud.email_contacto,
         f"Recibimos tu solicitud {solicitud.codigo}",
@@ -172,6 +182,10 @@ def cambiar_estado(solicitud, nuevo_estado, usuario, comentario="", request=None
         )
     solicitud.estado = nuevo_estado
     solicitud.save(update_fields=["estado", "actualizada"])
+    if nuevo_estado in (Estado.CANCELADA, Estado.FINALIZADA):  # ya no tiene sentido esperar respuestas
+        RequerimientoInfo.objects.filter(
+            solicitud=solicitud, respondido_en__isnull=True, cancelado_en__isnull=True
+        ).update(cancelado_en=timezone.now(), cancelado_por=usuario)
     HistorialEstado.objects.create(
         solicitud=solicitud, estado_anterior=anterior, estado_nuevo=nuevo_estado, usuario=usuario,
         usuario_nombre=(usuario.nombre_completo or usuario.email) if usuario else "Sistema", comentario=comentario[:300],
@@ -214,6 +228,7 @@ def anonimizar_datos_cliente(cliente):
         for adj in sol.adjuntos.all():
             adj.archivo.delete(save=False)
             adj.delete()
+        sol.requerimientos.filter(respondido_en__isnull=False).update(respuesta="[Eliminada a pedido del cliente]")
         sol.nombre_contacto = "Cliente eliminado"
         sol.telefono_contacto = ""
         sol.email_contacto = f"eliminado-{cliente.pk}@anonimo.invalid"

@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
 from apps.core.busqueda import filtrar_texto
+from apps.ofertas import services as ofertas
 
 from .models import CategoriaServicio, Servicio
 
@@ -14,6 +15,7 @@ def lista(request):
     if cat.isdigit():
         qs = qs.filter(categoria_id=int(cat))
     pagina = Paginator(qs, 9).get_page(request.GET.get("pagina"))
+    pagina.object_list = ofertas.anotar_ofertas_servicios(pagina.object_list, request.user)
     return render(
         request,
         "catalogo/lista.html",
@@ -23,4 +25,5 @@ def lista(request):
 
 def detalle(request, slug):
     servicio = get_object_or_404(Servicio.objects.select_related("categoria"), slug=slug)
+    servicio.oferta_vigente = ofertas.ofertas_de_servicios([servicio], request.user).get(servicio.pk)
     return render(request, "catalogo/detalle.html", {"servicio": servicio})

@@ -1,5 +1,5 @@
-<div class="field{% if field.errors %} has-error{% endif %}{% if field.field.widget.input_type == 'checkbox' %} check{% endif %}">
-  {% if field.field.widget.input_type == 'checkbox' %}
+<div class="field{% if field.errors %} has-error{% endif %}{% if field.field.widget.input_type == 'checkbox' and not field.field.widget.allow_multiple_selected %} check{% endif %}">
+  {% if field.field.widget.input_type == 'checkbox' and not field.field.widget.allow_multiple_selected %}
     <label>{{ field }} <span>{{ field.label }}</span></label>
   {% else %}
     {{ field.label_tag }}{{ field }}

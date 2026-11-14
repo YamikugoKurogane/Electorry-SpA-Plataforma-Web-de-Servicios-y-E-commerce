@@ -18,6 +18,7 @@
     <h3 style="margin-top:1rem">Descripción</h3>
     {{ solicitud.descripcion|linebreaks }}
     {% if solicitud.observaciones %}<h3>Observaciones</h3>{{ solicitud.observaciones|linebreaks }}{% endif %}
+    {% if solicitud.oferta_aplicada %}<div class="alert info" style="margin-top:.8rem"><strong>Ofertas consideradas</strong><br>{{ solicitud.oferta_aplicada|linebreaksbr }}</div>{% endif %}
     {% if adjuntos %}<h3>Adjuntos</h3><ul>{% for a in adjuntos %}<li><a href="{% url 'solicitudes:adjunto' a.pk %}" target="_blank" rel="noopener">{{ a.nombre_original }}</a> <span class="muted small">({{ a.tamano|filesizeformat }})</span></li>{% endfor %}</ul>{% endif %}
   </div>
   <div class="card">

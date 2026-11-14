@@ -44,10 +44,21 @@ class CatalogoPublicoTests(BaseTest):
         self.assertContains(r, "Página no encontrada", status_code=404)
 
     def test_catalogo_rendimiento_consultas_constantes(self):  # RNF-PER-02, EC-05
-        for i in range(8):
+        """Las consultas no deben crecer con el número de servicios (incluye la de ofertas, una por página)."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def consultas():
+            with CaptureQueriesContext(connection) as c:
+                self.client.get(reverse("catalogo:lista"))
+            return len(c)
+
+        for i in range(2):
             Servicio.objects.create(categoria=self.servicio.categoria, nombre=f"X{i}", resumen="r", descripcion="d")
-        with self.assertNumQueries(4):
-            self.client.get(reverse("catalogo:lista"))
+        pocas = consultas()
+        for i in range(2, 8):
+            Servicio.objects.create(categoria=self.servicio.categoria, nombre=f"X{i}", resumen="r", descripcion="d")
+        self.assertEqual(consultas(), pocas)
 
     def test_productos_publicos(self):
         self.assertContains(self.client.get(reverse("tienda:lista")), "Disyuntor 20A")

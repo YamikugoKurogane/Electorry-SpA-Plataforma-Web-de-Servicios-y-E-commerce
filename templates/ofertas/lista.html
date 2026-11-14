@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% load electorry %}
+{% block title %}Ofertas · {{ EMPRESA.nombre }}{% endblock %}
+{% block description %}Ofertas vigentes en productos y servicios eléctricos.{% endblock %}
+{% block content %}
+<h1>Ofertas vigentes</h1>
+<p class="muted">Descuentos activos hoy. Se aplican automáticamente al comprar o al solicitar una cotización.</p>
+{% if ofertas_exclusivas_ocultas %}
+<div class="alert info">Hay {{ ofertas_exclusivas_ocultas }} oferta{{ ofertas_exclusivas_ocultas|pluralize }} exclusiva{{ ofertas_exclusivas_ocultas|pluralize }} para clientes registrados.
+  <a href="{% url 'usuarios:login' %}?next={% url 'ofertas:lista' %}">Ingresa</a> o <a href="{% url 'usuarios:registro' %}?next={% url 'ofertas:lista' %}">crea tu cuenta</a> para verla{{ ofertas_exclusivas_ocultas|pluralize }}.</div>
+{% endif %}
+<div class="grid cols-2">
+  {% for o in pagina %}
+  <article class="card oferta">
+    <div class="row between">
+      <span class="badge-oferta grande">−{{ o.descuento }}%</span>
+      <span class="small muted">Hasta el {{ o.fecha_fin|date:"d-m-Y" }}</span>
+    </div>
+    {% if o.solo_clientes %}<p style="margin:.4rem 0 0"><span class="pill">Exclusiva para clientes</span></p>{% endif %}
+    <h2 style="margin-top:.5rem">{{ o.titulo }}</h2>
+    {% if o.descripcion %}<p class="muted">{{ o.descripcion }}</p>{% endif %}
+    {% if o.productos_con_precio %}
+    <h3>Productos</h3>
+    <ul class="lista-oferta">
+      {% for p, pv in o.productos_con_precio %}
+      <li><a href="{{ p.get_absolute_url }}">{{ p.nombre }}</a> — {% include "ofertas/_precio.html" %}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if o.servicios_activos %}
+    <h3>Servicios</h3>
+    <ul class="lista-oferta">
+      {% for s in o.servicios_activos %}<li><a href="{{ s.get_absolute_url }}">{{ s.nombre }}</a> <span class="muted small">— el descuento se considera en la cotización</span></li>{% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% empty %}
+  <div class="card empty" style="grid-column:1/-1">No hay ofertas vigentes por ahora. <a href="{% url 'tienda:lista' %}">Ver productos</a> · <a href="{% url 'catalogo:lista' %}">Ver servicios</a>.</div>
+  {% endfor %}
+</div>
+{% include "partials/paginacion.html" %}
+{% endblock %}

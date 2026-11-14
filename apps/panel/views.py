@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -21,8 +21,9 @@ from apps.notificaciones import services as notif_services
 from apps.notificaciones.models import Notificacion
 from apps.pagos import services as pago_services
 from apps.solicitudes import services as sol_services
-from apps.solicitudes.forms import CambioEstadoForm
-from apps.solicitudes.models import Estado, SolicitudCotizacion
+from apps.solicitudes.forms import CambioEstadoForm, PedirInfoForm
+from apps.solicitudes.views import items_info
+from apps.solicitudes.models import Estado, RequerimientoInfo, SolicitudCotizacion
 from apps.tienda import services as venta_services
 from apps.tienda.forms import CategoriaProductoForm, ProductoForm
 from apps.tienda.models import CategoriaProducto, EstadoVenta, Producto, Venta
@@ -80,6 +81,7 @@ def dashboard(request):
         "seccion": "dashboard",
         "tarjetas": [(Estado(e).label, n, e) for e, n in por_estado.items() if e not in ("CANCELADA",)],
         "recientes": SolicitudCotizacion.objects.select_related("servicio").prefetch_related("items").order_by("-creada")[:8],
+        "info_pendiente": RequerimientoInfo.objects.filter(respondido_en__isnull=True, cancelado_en__isnull=True).values("solicitud").distinct().count(),
         "borradores": Cotizacion.objects.filter(estado=EstadoCotizacion.BORRADOR).count(),
         "ventas_pendientes": Venta.objects.filter(estado=EstadoVenta.PENDIENTE_PAGO).count(),
         "correos_pendientes": Notificacion.objects.filter(estado=Notificacion.Estado.PENDIENTE).count(),
@@ -91,10 +93,11 @@ def dashboard(request):
 # ================================================================= solicitudes (RF-05)
 @rol_requerido(*PERSONAL)
 def solicitudes_lista(request):
-    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items")
+    qs = SolicitudCotizacion.objects.select_related("servicio", "cliente").prefetch_related("items", "requerimientos")
     q = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "")
     servicio = request.GET.get("servicio", "")
+    info = request.GET.get("info", "")
     desde, hasta = fecha_o_none(request.GET.get("desde")), fecha_o_none(request.GET.get("hasta"))
     if q:
         cond = Q(nombre_contacto__icontains=q) | Q(email_contacto__icontains=q) | Q(descripcion__icontains=q) | Q(direccion__icontains=q)
@@ -107,6 +110,11 @@ def solicitudes_lista(request):
         qs = qs.filter(estado=estado)
     if servicio.isdigit():
         qs = qs.filter(servicio_id=int(servicio))
+    if info == "pendiente":  # solicitudes que esperan respuesta del cliente
+        qs = qs.filter(Exists(RequerimientoInfo.objects.filter(
+            solicitud=OuterRef("pk"), respondido_en__isnull=True, cancelado_en__isnull=True)))
+    else:
+        info = ""
     if desde:
         qs = qs.filter(creada__date__gte=desde)
     if hasta:
@@ -115,7 +123,7 @@ def solicitudes_lista(request):
     return render(
         request, "panel/solicitudes_lista.html",
         {"seccion": "solicitudes", "pagina": pagina, "estados": Estado.choices, "servicios": Servicio.objects.all(),
-         "q": q, "estado": estado, "servicio": servicio, "desde": request.GET.get("desde", ""), "hasta": request.GET.get("hasta", "")},
+         "q": q, "estado": estado, "servicio": servicio, "info": info, "desde": request.GET.get("desde", ""), "hasta": request.GET.get("hasta", "")},
     )
 
 
@@ -135,8 +143,10 @@ def solicitud_detalle(request, pk):
     return render(
         request, "panel/solicitud_detalle.html",
         {"seccion": "solicitudes", "solicitud": solicitud, "form": form, "permitidos": permitidos,
-         "historial": solicitud.historial.all(), "adjuntos": solicitud.adjuntos.all(),
-         "cotizaciones": solicitud.cotizaciones.prefetch_related("lineas")},
+         "historial": solicitud.historial.all(), "adjuntos": solicitud.adjuntos.filter(requerimiento__isnull=True),
+         "cotizaciones": solicitud.cotizaciones.prefetch_related("lineas"),
+         "items_info": items_info(solicitud, es_cliente=False), "form_info": PedirInfoForm(),
+         "puede_pedir_info": solicitud.estado not in (Estado.CANCELADA, Estado.FINALIZADA)},
     )
 
 

@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.core.busqueda import filtrar_texto
+from apps.ofertas import services as ofertas
 from apps.core.permisos import SOLO_CLIENTE, TODOS_AUTENTICADOS, rol_requerido
 
 from . import services
@@ -20,6 +21,7 @@ def lista(request):
     if cat.isdigit():
         qs = qs.filter(categoria_id=int(cat))
     pagina = Paginator(qs, 12).get_page(request.GET.get("pagina"))
+    pagina.object_list = ofertas.anotar_precios(pagina.object_list, request.user)
     return render(
         request, "tienda/lista.html",
         {"pagina": pagina, "categorias": CategoriaProducto.objects.filter(activa=True), "q": q, "cat": cat},
@@ -28,6 +30,7 @@ def lista(request):
 
 def detalle(request, slug):
     producto = get_object_or_404(Producto.objects.select_related("categoria"), slug=slug, activo=True)
+    producto.pv = ofertas.precio_vigente(producto, request.user)
     return render(request, "tienda/detalle.html", {"producto": producto})
 
 
@@ -36,7 +39,8 @@ def detalle(request, slug):
 
 def ver_carrito(request):
     c = Carrito(request)
-    return render(request, "tienda/carrito.html", {"lineas": c.lineas(), "total": c.total()})
+    lineas = c.lineas()
+    return render(request, "tienda/carrito.html", {"lineas": lineas, "total": sum(l["subtotal"] for l in lineas), "ahorro": sum(l["ahorro"] for l in lineas)})
 
 
 @require_POST
@@ -86,7 +90,9 @@ def checkout(request):
             return redirect("tienda:carrito")
         carrito.vaciar()
         return redirect("pagos:iniciar", venta_id=venta.pk)
-    return render(request, "tienda/checkout.html", {"form": form, "lineas": lineas, "total": carrito.total()})
+    return render(request, "tienda/checkout.html", {
+        "form": form, "lineas": lineas, "total": sum(l["subtotal"] for l in lineas), "ahorro": sum(l["ahorro"] for l in lineas),
+    })
 
 
 @rol_requerido(*SOLO_CLIENTE)

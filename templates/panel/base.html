@@ -13,6 +13,7 @@
     <h4>Catálogo</h4>
     <a href="{% url 'panel:servicios' %}" class="{% if seccion == 'servicios' %}active{% endif %}">Servicios</a>
     <a href="{% url 'panel:productos' %}" class="{% if seccion == 'productos' %}active{% endif %}">Productos</a>
+    <a href="{% url 'panel:ofertas' %}" class="{% if seccion == 'ofertas' %}active{% endif %}">Ofertas</a>
     <h4>Administración</h4>
     <a href="{% url 'panel:pagos' %}" class="{% if seccion == 'pagos' %}active{% endif %}">Pagos</a>
     <a href="{% url 'panel:reportes' %}" class="{% if seccion == 'reportes' %}active{% endif %}">Reportes</a>

@@ -7,6 +7,8 @@ from apps.auditoria import services as auditoria
 from apps.core.utils import formatear_clp
 from apps.notificaciones import services as notif
 
+from apps.ofertas.services import precios_vigentes
+
 from .models import DetalleVenta, EstadoVenta, Producto, Venta
 
 log = logging.getLogger("electorry.ventas")
@@ -20,7 +22,7 @@ class VentaError(Exception):
 def crear_venta(*, cliente, lineas, datos_entrega, request=None):
     """Crea la venta y su detalle de forma atómica (EC-02).
 
-    El precio se toma SIEMPRE de la base de datos, nunca del navegador.
+    El precio se calcula SIEMPRE en el servidor (precio de lista y oferta vigente para este cliente), nunca del navegador.
     """
     if not lineas:
         raise VentaError("Tu carrito está vacío.")
@@ -28,6 +30,7 @@ def crear_venta(*, cliente, lineas, datos_entrega, request=None):
     productos = {p.pk: p for p in Producto.objects.filter(pk__in=ids, activo=True, categoria__activa=True)}
     if len(productos) != len(set(ids)):
         raise VentaError("Alguno de los productos ya no está disponible. Revisa tu carrito.")
+    precios = precios_vigentes(productos.values(), cliente)
     venta = Venta.objects.create(
         cliente=cliente,
         nombre_cliente=datos_entrega["nombre_cliente"],
@@ -38,10 +41,14 @@ def crear_venta(*, cliente, lineas, datos_entrega, request=None):
     detalles = []
     for l in lineas:
         p = productos[l["producto"].pk]
+        pv = precios[p.pk]
         detalles.append(
-            DetalleVenta(venta=venta, producto=p, nombre_producto=p.nombre, cantidad=l["cantidad"], precio_unitario=p.precio)
+            DetalleVenta(
+                venta=venta, producto=p, nombre_producto=p.nombre, cantidad=l["cantidad"], precio_unitario=pv.precio,
+                precio_lista=pv.precio_lista, oferta_titulo=pv.oferta.titulo if pv.con_oferta else "",
+            )
         )
-        total += p.precio * l["cantidad"]
+        total += pv.precio * l["cantidad"]
     DetalleVenta.objects.bulk_create(detalles)
     venta.total = total
     venta.save(update_fields=["total", "actualizada"])

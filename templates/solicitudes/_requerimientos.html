@@ -1,0 +1,46 @@
+{% load electorry %}
+{% if items_info or modo == "panel" and puede_pedir_info %}
+<div class="card info-adicional" id="informacion-adicional" style="margin-top:1rem">
+  <h2>Información adicional</h2>
+
+  {% if modo == "panel" and puede_pedir_info %}
+  <form method="post" action="{% url 'panel:info_pedir' solicitud.pk %}" class="form" data-once style="margin-bottom:1rem">{% csrf_token %}
+    {% include "partials/campo.html" with field=form_info.pregunta %}
+    <div><button class="btn secondary" type="submit">Pedir información al cliente</button>
+      <span class="muted small">Le avisamos por correo y podrá responder aquí mismo, con archivos si hace falta.</span></div>
+  </form>
+  {% endif %}
+
+  {% for it in items_info %}{% with r=it.req %}
+  <div class="intercambio estado-borde-{{ r.estado|estado_css }}">
+    <div class="row between">
+      <strong>Pregunta de {{ r.creado_por_nombre|default:"Electorry" }}</strong>
+      <span class="estado estado-info-{{ r.estado|estado_css }}">{{ r.get_estado_display }}</span>
+    </div>
+    <p class="muted small" style="margin:.1rem 0 .4rem">{{ r.creado|date:"d-m-Y H:i" }}</p>
+    {{ r.pregunta|linebreaks }}
+
+    {% if r.estado == "RESPONDIDO" %}
+      <div class="respuesta">
+        <p class="muted small" style="margin:0 0 .3rem"><strong>Respuesta</strong> · {{ r.respondido_en|date:"d-m-Y H:i" }}</p>
+        {% if r.respuesta %}{{ r.respuesta|linebreaks }}{% else %}<p class="muted">(Solo archivos adjuntos)</p>{% endif %}
+        {% if r.adjuntos.all %}<ul>{% for a in r.adjuntos.all %}<li><a href="{% url 'solicitudes:adjunto' a.pk %}" target="_blank" rel="noopener">{{ a.nombre_original }}</a> <span class="muted small">({{ a.tamano|filesizeformat }})</span></li>{% endfor %}</ul>{% endif %}
+      </div>
+    {% elif r.estado == "CANCELADO" %}
+      <p class="muted small">Esta pregunta ya no es necesaria.</p>
+    {% elif modo == "cliente" and it.form %}
+      <form method="post" action="{% url 'solicitudes:info_responder' r.pk %}" enctype="multipart/form-data" class="form" novalidate data-once>{% csrf_token %}
+        {% if it.form.non_field_errors %}<div class="alert error">{{ it.form.non_field_errors|join:" " }}</div>{% endif %}
+        {% for field in it.form.visible_fields %}{% include "partials/campo.html" %}{% endfor %}
+        <div><button class="btn" type="submit">Enviar respuesta</button></div>
+      </form>
+    {% elif modo == "panel" %}
+      <form method="post" action="{% url 'panel:info_cancelar' r.pk %}" onsubmit="return confirm('¿Cancelar esta pregunta? El cliente ya no podrá responderla.')">{% csrf_token %}
+        <span class="muted small">Esperando respuesta del cliente.</span> <button class="btn ghost small" type="submit">Cancelar pregunta</button></form>
+    {% endif %}
+  </div>
+  {% endwith %}{% empty %}
+    {% if modo == "panel" %}<p class="muted">Todavía no se ha pedido información adicional en esta solicitud.</p>{% endif %}
+  {% endfor %}
+</div>
+{% endif %}

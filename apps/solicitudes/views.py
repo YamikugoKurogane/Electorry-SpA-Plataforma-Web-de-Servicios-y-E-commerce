@@ -9,7 +9,9 @@ from apps.tienda.carrito import Carrito
 from apps.tienda.models import Producto
 
 from . import services
-from .forms import ItemFormSet, SolicitudForm, items_validos
+from . import requerimientos
+from .forms import ItemFormSet, ResponderInfoForm, SolicitudForm, items_validos
+from .models import RequerimientoInfo
 from .models import Adjunto
 
 
@@ -60,9 +62,21 @@ def mis_solicitudes(request):
     return render(request, "solicitudes/mis_solicitudes.html", {"pagina": pagina})
 
 
-@rol_requerido(*TODOS_AUTENTICADOS)
-def detalle(request, pk):
-    solicitud = services.obtener_solicitud_para(request.user, pk, request)
+def items_info(solicitud, es_cliente, form_con_error=None):
+    """Preguntas de información adicional con el formulario de respuesta (solo para el cliente y si siguen pendientes)."""
+    items = []
+    for r in solicitud.requerimientos.prefetch_related("adjuntos").all():
+        form = None
+        if es_cliente and r.pendiente:
+            if form_con_error and form_con_error[0] == r.pk:
+                form = form_con_error[1]
+            else:
+                form = ResponderInfoForm(auto_id=f"id_resp{r.pk}_%s")
+        items.append({"req": r, "form": form})
+    return items
+
+
+def _render_detalle(request, solicitud, form_con_error=None):
     cotizaciones = solicitud.cotizaciones.prefetch_related("lineas").order_by("-creada")
     if request.user.es_cliente:  # el cliente no ve borradores
         cotizaciones = cotizaciones.exclude(estado="BORRADOR")
@@ -72,11 +86,38 @@ def detalle(request, pk):
         {
             "solicitud": solicitud,
             "historial": solicitud.historial.all(),
-            "adjuntos": solicitud.adjuntos.all(),
+            "adjuntos": solicitud.adjuntos.filter(requerimiento__isnull=True),  # los de respuestas se muestran junto a su pregunta
             "cotizaciones": cotizaciones,
             "puede_cancelar": request.user.es_cliente and services.puede_cliente_cancelar(solicitud),
+            "items_info": items_info(solicitud, request.user.es_cliente, form_con_error),
         },
     )
+
+
+@rol_requerido(*TODOS_AUTENTICADOS)
+def detalle(request, pk):
+    solicitud = services.obtener_solicitud_para(request.user, pk, request)
+    return _render_detalle(request, solicitud)
+
+
+@require_POST
+@rol_requerido(*SOLO_CLIENTE)
+def responder_info(request, pk):
+    """El cliente responde una pregunta de información adicional (RF-25). Solo en sus propias solicitudes."""
+    req = get_object_or_404(RequerimientoInfo, pk=pk)
+    solicitud = services.obtener_solicitud_para(request.user, req.solicitud_id, request)  # 404 si no es suya
+    form = ResponderInfoForm(request.POST, request.FILES, auto_id=f"id_resp{req.pk}_%s")
+    if form.is_valid():
+        try:
+            requerimientos.responder_requerimiento(
+                req.pk, request.user, form.cleaned_data["respuesta"], form.cleaned_data["archivos"], request
+            )
+        except requerimientos.RequerimientoError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, "¡Gracias! Enviamos tu respuesta al equipo de Electorry.")
+            return redirect(solicitud)
+    return _render_detalle(request, solicitud, form_con_error=(req.pk, form))
 
 
 @require_POST

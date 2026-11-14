@@ -1,4 +1,6 @@
 """Carrito en sesión. El visitante puede armarlo sin cuenta; para pagar debe registrarse (T1)."""
+from apps.ofertas.services import precios_vigentes
+
 from .models import Producto
 
 MAX_POR_PRODUCTO = 50
@@ -9,6 +11,7 @@ class Carrito:
 
     def __init__(self, request):
         self.session = request.session
+        self.usuario = getattr(request, "user", None)  # las ofertas exclusivas dependen de quién mira
         self.items = self.session.get(self.CLAVE, {})
 
     def _guardar(self):
@@ -34,15 +37,23 @@ class Carrito:
         self._guardar()
 
     def lineas(self):
-        """Lista de (producto, cantidad, subtotal) con una sola consulta."""
+        """Líneas del carrito con precio vigente (con oferta si corresponde). Consultas constantes, sin N+1."""
         ids = [int(i) for i in self.items]
         productos = {p.pk: p for p in Producto.objects.filter(pk__in=ids, activo=True, categoria__activa=True)}
+        precios = precios_vigentes(productos.values(), self.usuario)
         resultado = []
         for pid, cantidad in self.items.items():
             p = productos.get(int(pid))
             if p:
-                resultado.append({"producto": p, "cantidad": int(cantidad), "subtotal": p.precio * int(cantidad)})
+                pv, n = precios[p.pk], int(cantidad)
+                resultado.append({
+                    "producto": p, "cantidad": n, "pv": pv, "precio": pv.precio, "precio_lista": pv.precio_lista,
+                    "descuento": pv.descuento, "subtotal": pv.precio * n, "ahorro": (pv.precio_lista - pv.precio) * n,
+                })
         return resultado
+
+    def ahorro(self):
+        return sum(l["ahorro"] for l in self.lineas())
 
     def total(self):
         return sum(l["subtotal"] for l in self.lineas())

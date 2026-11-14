@@ -6,13 +6,14 @@
 <div class="table-wrap"><table>
   <thead><tr><th>Producto</th><th class="num">Precio</th><th>Cantidad</th><th class="num">Subtotal</th><th></th></tr></thead>
   <tbody>{% for l in lineas %}
-    <tr><td><a href="{{ l.producto.get_absolute_url }}">{{ l.producto.nombre }}</a></td><td class="num">{{ l.producto.precio|clp }}</td>
+    <tr><td><a href="{{ l.producto.get_absolute_url }}">{{ l.producto.nombre }}</a></td><td class="num">{% include "ofertas/_precio.html" with pv=l.pv %}</td>
       <td><form method="post" action="{% url 'tienda:carrito_actualizar' l.producto.pk %}" class="row">{% csrf_token %}
         <input type="number" name="cantidad" value="{{ l.cantidad }}" min="0" max="50" style="width:4.5rem;padding:.4rem;border:1px solid #c7d0dc;border-radius:8px" aria-label="Cantidad"><button class="btn ghost small" type="submit">Actualizar</button></form></td>
       <td class="num">{{ l.subtotal|clp }}</td>
       <td><form method="post" action="{% url 'tienda:carrito_quitar' l.producto.pk %}">{% csrf_token %}<button class="btn ghost small" type="submit">Quitar</button></form></td></tr>
   {% endfor %}</tbody>
-  <tfoot><tr><td colspan="3" class="num"><strong>Total (IVA incluido)</strong></td><td class="num"><strong>{{ total|clp }}</strong></td><td></td></tr></tfoot>
+  <tfoot>{% if ahorro %}<tr><td colspan="3" class="num">Ahorras con ofertas</td><td class="num" style="color:var(--ok)"><strong>{{ ahorro|clp }}</strong></td><td></td></tr>{% endif %}
+  <tr><td colspan="3" class="num"><strong>Total (IVA incluido)</strong></td><td class="num"><strong>{{ total|clp }}</strong></td><td></td></tr></tfoot>
 </table></div>
 <div class="row" style="margin-top:1rem"><a class="btn ghost" href="{% url 'tienda:lista' %}">Seguir comprando</a>
   {% if not user.is_authenticated or user.es_cliente %}<a class="btn ghost" href="{% url 'solicitudes:crear' %}?desde=carrito">Cotizar este carrito</a>{% endif %}

@@ -5,7 +5,7 @@
 <div class="card stack">
   <dl class="meta"><dt>Cliente</dt><dd><a href="{% url 'panel:cliente_detalle' venta.cliente_id %}">{{ venta.cliente.email }}</a></dd><dt>Entrega</dt><dd>{{ venta.nombre_cliente }} · {{ venta.direccion_entrega }} · {{ venta.telefono_contacto }}</dd><dt>Fecha</dt><dd>{{ venta.creada|date:"d-m-Y H:i" }}</dd></dl>
   <div class="table-wrap"><table><thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th></tr></thead><tbody>
-  {% for d in venta.detalles.all %}<tr><td>{{ d.nombre_producto }}</td><td class="num">{{ d.cantidad }}</td><td class="num">{{ d.precio_unitario|clp }}</td><td class="num">{{ d.subtotal|clp }}</td></tr>{% endfor %}</tbody>
+  {% for d in venta.detalles.all %}<tr><td>{{ d.nombre_producto }}</td><td class="num">{{ d.cantidad }}</td><td class="num">{{ d.precio_unitario|clp }}{% if d.con_oferta %}<br><s class="muted small">{{ d.precio_lista|clp }}</s> <span class="badge-oferta">{{ d.oferta_titulo }}</span>{% endif %}</td><td class="num">{{ d.subtotal|clp }}</td></tr>{% endfor %}</tbody>
   <tfoot><tr><td colspan="3" class="num"><strong>Total</strong></td><td class="num"><strong>{{ venta.total|clp }}</strong></td></tr></tfoot></table></div>
   <h2>Intentos de pago</h2>
   <ul>{% for p in venta.pagos.all %}<li>{{ p.creado|date:"d-m-Y H:i" }} · {{ p.proveedor }} · <span class="estado estado-{{ p.estado|estado_css }}">{{ p.get_estado_display }}</span> {{ p.referencia }}</li>{% empty %}<li class="muted">Sin intentos de pago.</li>{% endfor %}</ul>

@@ -3,7 +3,12 @@
 {% block content %}
 <p class="small"><a href="{% if user.es_personal %}{% url 'panel:solicitudes' %}{% else %}{% url 'solicitudes:mis_solicitudes' %}{% endif %}">← Volver</a></p>
 <div class="row between"><h1>{{ solicitud.codigo }}</h1><span class="estado estado-{{ solicitud.estado|estado_css }}" style="font-size:1rem">{{ solicitud.get_estado_display }}</span></div>
+{% if user.es_cliente and solicitud.info_pendiente %}
+<div class="alert warning" role="alert"><strong>Necesitamos más información de tu parte.</strong>
+  Tienes {{ solicitud.info_pendiente }} pregunta{{ solicitud.info_pendiente|pluralize }} sin responder. <a href="#informacion-adicional">Responder ahora</a>.</div>
+{% endif %}
 {% include "solicitudes/_detalle_cuerpo.html" %}
+{% include "solicitudes/_requerimientos.html" with modo="cliente" %}
 {% if puede_cancelar %}
 <form method="post" action="{% url 'solicitudes:cancelar' solicitud.pk %}" class="row" data-once style="margin-top:1rem">
   {% csrf_token %}<button class="btn danger" type="submit">Cancelar solicitud</button>

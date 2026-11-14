@@ -1,0 +1,9 @@
+{% extends "panel/base.html" %}
+{% block panel %}
+<p class="small"><a href="{% url 'panel:ofertas' %}">← Ofertas</a></p>
+<div class="card medium" style="margin:0"><h1>{% if oferta %}Editar oferta{% else %}Nueva oferta{% endif %}</h1>
+  {% if oferta %}<p class="muted small">Estado actual: <span class="estado estado-oferta-{{ oferta.estado|lower }}">{{ oferta.get_estado_display }}</span>. Si está vencida, amplía la fecha de término para reabrirla.</p>{% endif %}
+  <p class="muted small">El precio con oferta se aplica automáticamente en la tienda y en las solicitudes. Si un producto tiene varias ofertas vigentes, se usa la de mayor descuento (no se suman).</p>
+  <form method="post" class="form" novalidate data-once>{% csrf_token %}{% include "partials/form.html" %}
+    <div class="row"><button class="btn" type="submit">Guardar</button><a class="btn ghost" href="{% url 'panel:ofertas' %}">Cancelar</a></div></form></div>
+{% endblock %}

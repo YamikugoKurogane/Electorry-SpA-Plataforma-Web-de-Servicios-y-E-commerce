@@ -7,7 +7,7 @@
   <dl class="meta"><dt>Fecha</dt><dd>{{ venta.creada|date:"d-m-Y H:i" }}</dd><dt>Entrega</dt><dd>{{ venta.nombre_cliente }} · {{ venta.direccion_entrega }} · {{ venta.telefono_contacto }}</dd></dl>
   <div class="table-wrap"><table>
     <thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th></tr></thead>
-    <tbody>{% for d in venta.detalles.all %}<tr><td>{{ d.nombre_producto }}</td><td class="num">{{ d.cantidad }}</td><td class="num">{{ d.precio_unitario|clp }}</td><td class="num">{{ d.subtotal|clp }}</td></tr>{% endfor %}</tbody>
+    <tbody>{% for d in venta.detalles.all %}<tr><td>{{ d.nombre_producto }}</td><td class="num">{{ d.cantidad }}</td><td class="num">{{ d.precio_unitario|clp }}{% if d.con_oferta %}<br><s class="muted small">{{ d.precio_lista|clp }}</s> <span class="badge-oferta">{{ d.oferta_titulo }}</span>{% endif %}</td><td class="num">{{ d.subtotal|clp }}</td></tr>{% endfor %}</tbody>
     <tfoot><tr><td colspan="3" class="num"><strong>Total</strong></td><td class="num"><strong>{{ venta.total|clp }}</strong></td></tr></tfoot></table></div>
   {% if venta.pagable and user.es_cliente %}
     <div class="alert warning">Esta compra está pendiente de pago.</div>

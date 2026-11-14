@@ -7,6 +7,7 @@
   <div class="row"><span class="pill">{{ servicio.categoria }}</span>
     {% if servicio.disponible %}<span class="estado estado-aprobado">Disponible</span>{% else %}<span class="estado">No disponible por ahora</span>{% endif %}</div>
   <h1>{{ servicio.nombre }}</h1>
+  {% if servicio.oferta_vigente %}<div class="alert info"><span class="badge-oferta">−{{ servicio.oferta_vigente.descuento }}%</span> <strong>{{ servicio.oferta_vigente.titulo }}</strong> · vigente hasta el {{ servicio.oferta_vigente.fecha_fin|date:"d-m-Y" }}. El descuento se considerará en tu cotización.</div>{% endif %}
   <p class="muted" style="font-size:1.1rem">{{ servicio.resumen }}</p>
   <div>{{ servicio.descripcion|linebreaks }}</div>
   {% if servicio.disponible %}

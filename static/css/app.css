@@ -101,6 +101,28 @@ fieldset.items legend { font-weight: 600; padding: 0 .4rem; }
 .item-row { display: grid; grid-template-columns: 1fr 7rem; gap: .6rem; margin-bottom: .5rem; }
 @media (max-width: 520px) { .item-row { grid-template-columns: 1fr 5.5rem; } }
 
+/* Información adicional */
+.intercambio { border-left: 4px solid var(--line); padding: .6rem .9rem; margin: .8rem 0; background: #fafbfd; border-radius: 0 8px 8px 0; }
+.intercambio.estado-borde-pendiente { border-left-color: var(--amber); }
+.intercambio.estado-borde-respondido { border-left-color: var(--ok); }
+.intercambio .respuesta { margin-top: .6rem; padding: .6rem .8rem; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.estado-info-pendiente { background: var(--warn-bg); color: var(--warn); }
+.estado-info-respondido { background: var(--ok-bg); color: var(--ok); }
+.estado-info-cancelado { background: #e5e7eb; color: #4b5563; }
+
+/* Ofertas */
+.badge-oferta { display: inline-block; background: #dc2626; color: #fff; font-weight: 800; border-radius: 6px; padding: .05rem .45rem; font-size: .8rem; vertical-align: middle; }
+.badge-oferta.grande { font-size: 1.1rem; padding: .15rem .6rem; }
+.precio-oferta { color: #b91c1c; }
+.lista-oferta { margin: .25rem 0 .75rem; padding-left: 1.1rem; }
+.lista-oferta li { margin: .3rem 0; }
+.estado-oferta-vigente { background: var(--ok-bg); color: var(--ok); }
+.estado-oferta-programada { background: var(--info-bg); color: var(--info); }
+.estado-oferta-vencida { background: var(--warn-bg); color: var(--warn); }
+.estado-oferta-finalizada { background: #e5e7eb; color: #4b5563; }
+.field ul { list-style: none; margin: 0; padding: .5rem .75rem; max-height: 14rem; overflow: auto; border: 1px solid #c7d0dc; border-radius: 8px; background: #fff; }
+.field ul li label { display: flex; gap: .5rem; font-weight: 400; margin: .15rem 0; }
+
 /* Tablas */
 .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
 table { width: 100%; border-collapse: collapse; font-size: .93rem; }

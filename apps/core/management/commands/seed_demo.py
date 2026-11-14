@@ -53,4 +53,23 @@ class Command(BaseCommand):
             pw = os.environ.get("SEED_INTERNO_PASSWORD") or secrets.token_urlsafe(12)
             Usuario.objects.create_user("interno@electorry.cl", pw, first_name="Usuario", last_name="Interno", rol=Rol.INTERNO)
             self.stdout.write(self.style.WARNING(f"Interno creado: interno@electorry.cl / {pw}"))
+        self._oferta_demo()
         self.stdout.write(self.style.SUCCESS("Datos de demostración listos."))
+
+    def _oferta_demo(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.ofertas.models import Oferta
+
+        if Oferta.objects.filter(titulo="Oferta de bienvenida (demo)").exists():
+            return
+        hoy = timezone.localdate()
+        oferta = Oferta.objects.create(
+            titulo="Oferta de bienvenida (demo)", descripcion="Descuento de ejemplo para mostrar la gestión de ofertas.",
+            descuento=15, fecha_inicio=hoy, fecha_fin=hoy + timedelta(days=30),
+        )
+        oferta.productos.set(Producto.objects.filter(categoria__nombre="Iluminación"))
+        oferta.servicios.set(Servicio.objects.filter(nombre__icontains="LED")[:1])
+        self.stdout.write(self.style.WARNING("Oferta demo creada (15 % en iluminación, 30 días)."))

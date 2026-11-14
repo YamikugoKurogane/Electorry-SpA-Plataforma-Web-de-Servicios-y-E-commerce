@@ -3,6 +3,7 @@
 <p class="small"><a href="{% url 'panel:solicitudes' %}">← Solicitudes</a></p>
 <div class="row between"><h1>{{ solicitud.codigo }}</h1><span class="estado estado-{{ solicitud.estado|estado_css }}" style="font-size:1rem">{{ solicitud.get_estado_display }}</span></div>
 {% include "solicitudes/_detalle_cuerpo.html" %}
+{% include "solicitudes/_requerimientos.html" with modo="panel" %}
 <div class="grid cols-2">
   <div class="card"><h2>Cambiar estado</h2>
     {% if permitidos %}<form method="post" class="form" data-once>{% csrf_token %}{% include "partials/form.html" %}<div><button class="btn" type="submit">Actualizar y notificar</button></div></form>

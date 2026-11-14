@@ -17,6 +17,7 @@
     <nav class="nav" aria-label="Principal">
       <a href="{% url 'catalogo:lista' %}">Servicios</a>
       <a href="{% url 'tienda:lista' %}">Productos</a>
+      <a href="{% url 'ofertas:lista' %}">Ofertas</a>
       <a href="{% url 'tienda:carrito' %}">Carrito{% if carrito_items %}<span class="badge-n">{{ carrito_items }}</span>{% endif %}</a>
       {% if user.is_authenticated %}
         {% if user.es_personal %}

@@ -3,7 +3,7 @@ from django.urls import path
 from apps.reportes import views as reportes
 
 from . import views as v
-from . import views_pagos
+from . import views_info, views_ofertas, views_pagos
 
 app_name = "panel"
 
@@ -13,6 +13,8 @@ urlpatterns = [
     # solicitudes
     path("solicitudes/", v.solicitudes_lista, name="solicitudes"),
     path("solicitudes/<int:pk>/", v.solicitud_detalle, name="solicitud_detalle"),
+    path("solicitudes/<int:pk>/info/", views_info.info_pedir, name="info_pedir"),
+    path("info/<int:pk>/cancelar/", views_info.info_cancelar, name="info_cancelar"),
     # cotizaciones
     path("cotizaciones/", v.cotizaciones_lista, name="cotizaciones"),
     path("cotizaciones/nueva/<int:solicitud_id>/", v.cotizacion_form, name="cotizacion_crear"),
@@ -45,6 +47,11 @@ urlpatterns = [
     path("ventas/<int:pk>/", v.venta_detalle, name="venta_detalle"),
     path("ventas/<int:pk>/accion/", v.venta_accion, name="venta_accion"),
     path("pagos/", views_pagos.pagos_lista, name="pagos"),
+    # ofertas
+    path("ofertas/", views_ofertas.ofertas_lista, name="ofertas"),
+    path("ofertas/nueva/", views_ofertas.oferta_crear, name="oferta_crear"),
+    path("ofertas/<int:pk>/editar/", views_ofertas.oferta_editar, name="oferta_editar"),
+    path("ofertas/<int:pk>/finalizar/", views_ofertas.oferta_finalizar, name="oferta_finalizar"),
     # usuarios
     path("usuarios/", v.UsuarioLista.as_view(), name="usuarios"),
     path("usuarios/nuevo/", v.UsuarioCrear.as_view(), name="usuario_crear"),

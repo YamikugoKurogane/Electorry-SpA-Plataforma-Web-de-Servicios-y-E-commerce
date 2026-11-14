@@ -58,3 +58,9 @@ EC-07 `deploy/backup.sh` · EC-08 `EstadosTests` · EC-09 `TRANSICIONES` en un s
 | S3-R3 Respaldo diario ampliado | RNF-18 | `deploy/backup.sh`, servicio `respaldo` del compose | Ejecución real contra PostgreSQL (ver `docs/RESPALDOS.md`) y trabajo `respaldos` del CI |
 | S3-R4 Prueba de restauración | RNF-18 | `deploy/restore.sh`, `deploy/probar_restauracion.sh`, `docs/RESPALDOS.md` | Pendiente: ejecutar en staging y completar la planilla de evidencia |
 | S3-R5 Contenido real | RF-09, RF-10 | `importar_contenido` (S2-R3) | Pendiente: recibir los datos reales |
+
+## Sprint 4 (numeración de la «Especificación de Requisitos»)
+| Tarea | Requisito | Implementación | Pruebas |
+|---|---|---|---|
+| S4-R1 Gestión de ofertas | RF-16, RF-17; HU-06, HU-12, HU-17 | App `ofertas` (`models`, `services`, `forms`, `views`), `panel/views_ofertas.py`, precio vigente en `tienda` (carrito, venta), `solicitudes.services.crear_solicitud` y catálogo | `tests/test_ofertas.py` |
+| S4-R2 Solicitar información adicional | RF-25 | `solicitudes` (`RequerimientoInfo`, `requerimientos.py`, `views.responder_info`), `panel/views_info.py`, plantilla `_requerimientos.html` | `tests/test_informacion_adicional.py` |

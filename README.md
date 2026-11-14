@@ -12,6 +12,7 @@ autenticación por sesión con roles, adaptador de pagos, correo tolerante a fal
 | `solicitudes` | Solicitud de cotización de un servicio, de productos o de ambos, adjuntos seguros, máquina de estados, historial |
 | `cotizaciones` | Cotizaciones con líneas, IVA, envío, aceptación/rechazo del cliente |
 | `tienda` | Productos, carrito (sesión), ventas y detalle |
+| `ofertas` | Ofertas con vigencia sobre productos y servicios; calcula el precio vigente que se muestra y se cobra |
 | `pagos` | Adaptador de pasarela (`sandbox`, `webpay`), intentos de pago idempotentes |
 | `notificaciones` | Bandeja de salida de correo con reintentos (outbox) |
 | `auditoria` | Registro inmutable de quién/cuándo/qué cambió |
@@ -35,7 +36,7 @@ python manage.py runserver
 ```
 Con PostgreSQL: define `DATABASE_URL=postgres://usuario:clave@localhost:5432/electorry`.
 
-Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (163 pruebas; algunas se omiten según el motor de base de datos).
+Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (278 pruebas; algunas se omiten según el motor de base de datos).
 
 ## Base de datos en desarrollo (PostgreSQL)
 
@@ -90,6 +91,15 @@ Si una fila tiene errores no se guarda nada y se listan con su número de línea
 «Instalación». En la imagen `postgres:16` de Docker está disponible. Si el servidor no la tiene, la migración no falla y la
 búsqueda sigue funcionando, solo que distinguiendo tildes.
 
+## Ofertas e información adicional (sprint 4)
+
+- **Ofertas** (`/panel/ofertas/`, solo administrador): descuento porcentual (1–90 %) con vigencia por fechas, sobre productos y/o servicios.
+  Se pueden crear, editar y **finalizar** (termina al instante; no se puede deshacer). El cliente las ve en `/ofertas/`, en el inicio, en la
+  tienda y en el catálogo. **El precio con oferta es el que se cobra** (tarjeta, carrito, venta y solicitud). Si varias ofertas afectan
+  a un producto se usa la de mayor descuento (no se suman).
+- **Información adicional** (en el detalle de cada solicitud): el personal pregunta; el cliente responde con texto y/o archivos
+  (JPG, PNG, PDF). Se avisa por correo, queda auditado y se cierra solo si la solicitud se cancela o finaliza.
+
 ## Roles y permisos
 
 | Pantalla / acción | Visitante | Cliente | Interno | Admin |
@@ -97,7 +107,10 @@ búsqueda sigue funcionando, solo que distinguiendo tildes.
 | Catálogo de servicios y productos, carrito | ✅ | ✅ | ✅ | ✅ |
 | Crear solicitud, comprar, ver **solo lo propio** | — | ✅ | — | — |
 | Panel: solicitudes, cotizaciones, clientes (lectura), ventas (lectura) | — | — | ✅ | ✅ |
-| CRUD servicios/productos, usuarios y roles, reportes, **listado de pagos**, auditoría, correos, anonimizar, cancelar/marcar pago | — | — | — | ✅ |
+| CRUD servicios/productos, **gestión de ofertas**, usuarios y roles, reportes, listado de pagos, auditoría, correos, anonimizar, cancelar/marcar pago | — | — | — | ✅ |
+| Ver ofertas vigentes (las «solo clientes» requieren sesión) | ✅ | ✅ | ✅ | ✅ |
+| Pedir información adicional dentro de una solicitud | — | — | ✅ | ✅ |
+| Responder esa información (con archivos) en **sus** solicitudes | — | ✅ | — | — |
 
 ## Despliegue (staging y producción: mismo stack, solo cambian variables — EC-11)
 

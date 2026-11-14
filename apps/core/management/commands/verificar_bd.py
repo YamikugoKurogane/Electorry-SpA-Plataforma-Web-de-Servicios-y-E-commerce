@@ -77,7 +77,8 @@ class Command(BaseCommand):
         from apps.catalogo.models import CategoriaServicio, Servicio
         from apps.cotizaciones.models import Cotizacion, LineaCotizacion
         from apps.pagos.models import Pago
-        from apps.solicitudes.models import ItemSolicitud, SolicitudCotizacion
+        from apps.ofertas.models import Oferta
+        from apps.solicitudes.models import ItemSolicitud, RequerimientoInfo, SolicitudCotizacion
         from apps.tienda.models import CategoriaProducto, DetalleVenta, Producto, Venta
         from apps.usuarios.models import Usuario
 
@@ -103,6 +104,15 @@ class Command(BaseCommand):
                           lambda: ItemSolicitud.objects.create(solicitud=sol, producto=prod, nombre_producto="x", cantidad=0))
         self._debe_fallar("el mismo producto dos veces en una solicitud",
                           lambda: [ItemSolicitud.objects.create(solicitud=sol, producto=prod, nombre_producto="x", cantidad=1) for _ in range(2)])
+        from datetime import timedelta
+        from django.utils import timezone
+        hoy, ahora = timezone.localdate(), timezone.now()
+        self._debe_fallar("oferta con descuento 0 %", lambda: Oferta.objects.create(titulo="x", descuento=0, fecha_inicio=hoy, fecha_fin=hoy))
+        self._debe_fallar("oferta con descuento mayor a 90 %", lambda: Oferta.objects.create(titulo="x", descuento=91, fecha_inicio=hoy, fecha_fin=hoy))
+        self._debe_fallar("oferta que termina antes de empezar",
+                          lambda: Oferta.objects.create(titulo="x", descuento=10, fecha_inicio=hoy, fecha_fin=hoy - timedelta(days=1)))
+        self._debe_fallar("pregunta de información respondida y cancelada a la vez",
+                          lambda: RequerimientoInfo.objects.create(solicitud=sol, pregunta="x", respondido_en=ahora, cancelado_en=ahora))
         self._debe_fallar("dos pagos con el mismo token y proveedor",
                           lambda: [Pago.objects.create(venta=venta, proveedor="x", token="t", monto=1) for _ in range(2)])
         self._debe_fallar("borrar un servicio que tiene solicitudes", servicio.delete)

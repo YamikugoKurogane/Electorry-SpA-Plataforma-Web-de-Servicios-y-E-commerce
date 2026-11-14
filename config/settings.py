@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.solicitudes",
     "apps.cotizaciones",
     "apps.tienda",
+    "apps.ofertas",
     "apps.pagos",
     "apps.reportes",
     "apps.panel",

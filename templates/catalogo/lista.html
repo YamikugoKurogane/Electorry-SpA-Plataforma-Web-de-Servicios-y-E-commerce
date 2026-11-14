@@ -13,6 +13,7 @@
   <article class="card">
     <div class="row between"><span class="pill">{{ s.categoria }}</span>
       {% if s.disponible %}<span class="estado estado-aprobado">Disponible</span>{% else %}<span class="estado">No disponible</span>{% endif %}</div>
+    {% if s.oferta_vigente %}<p style="margin:.5rem 0 0"><span class="badge-oferta">−{{ s.oferta_vigente.descuento }}%</span> <span class="small muted">{{ s.oferta_vigente.titulo }} · hasta {{ s.oferta_vigente.fecha_fin|date:"d-m-Y" }}</span></p>{% endif %}
     <h3 style="margin-top:.6rem"><a href="{{ s.get_absolute_url }}" style="text-decoration:none">{{ s.nombre }}</a></h3>
     <p class="muted">{{ s.resumen }}</p>
     <a class="btn small" href="{{ s.get_absolute_url }}">Ver detalle</a>
