@@ -37,7 +37,9 @@ class MercadoPagoGateway(PasarelaPago):
         })
         if "init_point" not in resp:
             raise PasarelaError("Respuesta inesperada de Mercado Pago al iniciar.")
-            return InicioPago(url=resp["init_point"], metodo="GET", campos={}) # type: ignore
+            
+        # ESTE RETURN ESTABA MAL INDENTADO EN TU CÓDIGO ORIGINAL
+        return InicioPago(url=resp["init_point"], metodo="GET", campos={})
 
     def confirmar(self, token: str) -> ResultadoPago:
         resp = self._llamar("GET", f"/v1/payments/{token}")

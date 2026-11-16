@@ -5,7 +5,7 @@ from django.utils.module_loading import import_string
 REGISTRO = {
     "sandbox": "apps.pagos.gateways.sandbox.SandboxGateway",
     "webpay": "apps.pagos.gateways.webpay.WebpayGateway",
-    # "mercadopago": "apps.pagos.gateways.mercadopago.MercadoPagoGateway",  ← un archivo nuevo, nada más (EC-03)
+    "mercadopago": "apps.pagos.gateways.mercadopago.MercadoPagoGateway",
 }
 
 
