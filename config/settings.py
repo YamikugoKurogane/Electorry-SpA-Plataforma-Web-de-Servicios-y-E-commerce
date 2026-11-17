@@ -233,6 +233,8 @@ EMPRESA = {
 
 # Pasarela de pago (D5). Valores: "sandbox" | "webpay"
 PAYMENT_GATEWAY = env("PAYMENT_GATEWAY", "sandbox")
+if TESTING:
+    PAYMENT_GATEWAY = "sandbox"  # <-- AGREGA ESTAS DOS LÍNEAS
 # El sandbox simula pagos: no debe quedar activo en producción por accidente.
 PAYMENT_SANDBOX_PERMITIDO = DEBUG or TESTING or env_bool("PAYMENT_SANDBOX_PERMITIDO", False)
 PAYMENT_TIMEOUT = int(env("PAYMENT_TIMEOUT", "10"))
