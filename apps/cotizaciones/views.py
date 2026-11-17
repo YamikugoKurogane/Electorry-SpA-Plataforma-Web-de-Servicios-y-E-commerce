@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -7,6 +8,7 @@ from apps.solicitudes.services import obtener_solicitud_para
 
 from . import services
 from .models import Cotizacion
+from .pdf import generar_pdf
 
 
 @rol_requerido(*TODOS_AUTENTICADOS)
@@ -17,6 +19,19 @@ def detalle(request, pk):
     if request.user.es_cliente and cot.estado == "BORRADOR":
         return redirect("solicitudes:detalle", pk=cot.solicitud_id)
     return render(request, "cotizaciones/detalle.html", {"cot": cot})
+
+
+@rol_requerido(*TODOS_AUTENTICADOS)
+def descargar_pdf(request, pk):
+    """Descarga la cotización en PDF, generada en el servidor. Mismas reglas de acceso que la vista de detalle."""
+    cot = get_object_or_404(Cotizacion.objects.select_related("solicitud__servicio").prefetch_related("lineas", "solicitud__items"), pk=pk)
+    obtener_solicitud_para(request.user, cot.solicitud_id, request)
+    if request.user.es_cliente and cot.estado == "BORRADOR":
+        return redirect("solicitudes:detalle", pk=cot.solicitud_id)
+    respuesta = HttpResponse(generar_pdf(cot), content_type="application/pdf")
+    respuesta["Content-Disposition"] = f'attachment; filename="{cot.codigo}.pdf"'
+    respuesta["Cache-Control"] = "private, no-store"  # contiene datos personales y montos
+    return respuesta
 
 
 @require_POST

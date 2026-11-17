@@ -17,7 +17,8 @@
     </tfoot></table></div>
   {% if cot.observaciones %}<div><h3>Observaciones</h3>{{ cot.observaciones|linebreaks }}</div>{% endif %}
   <div class="row no-print">
-    <button class="btn ghost" type="button" onclick="window.print()">Imprimir / guardar PDF</button>
+    <a class="btn" href="{% url 'cotizaciones:pdf' cot.pk %}">Descargar PDF</a>
+    <button class="btn ghost" type="button" onclick="window.print()">Imprimir</button>
     {% if user.es_personal and cot.estado == "BORRADOR" %}
       <a class="btn secondary" href="{% url 'panel:cotizacion_editar' cot.pk %}">Editar</a>
       <form method="post" action="{% url 'panel:cotizacion_enviar' cot.pk %}" data-once>{% csrf_token %}<button class="btn" type="submit">Enviar al cliente</button></form>

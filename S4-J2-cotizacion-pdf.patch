@@ -1,0 +1,295 @@
+diff -ruN -x __pycache__ -x '*.pyc' orig2/apps/cotizaciones/pdf.py Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/apps/cotizaciones/pdf.py
+--- a/apps/cotizaciones/pdf.py	1970-01-01 00:00:00.000000000 +0000
++++ b/apps/cotizaciones/pdf.py	2026-11-17 01:11:57.843310068 +0000
+@@ -0,0 +1,131 @@
++"""Generación del PDF de una cotización (S4-J2).
++
++Módulo aislado: solo depende de ReportLab y de los datos de la cotización. Si algún día hay que
++sacrificarlo, basta con borrar este archivo, la ruta/vista `descargar_pdf` y el botón de la plantilla.
++Usa fuentes estándar del PDF (Helvetica): no requiere archivos de fuentes en el servidor.
++"""
++from io import BytesIO
++from xml.sax.saxutils import escape
++
++from reportlab.lib import colors
++from reportlab.lib.enums import TA_RIGHT
++from reportlab.lib.pagesizes import A4
++from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
++from reportlab.lib.units import mm
++from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
++
++AZUL = colors.HexColor("#0b3d6b")
++GRIS = colors.HexColor("#5b6670")
++LINEA = colors.HexColor("#c9d1d9")
++FONDO = colors.HexColor("#eef3f8")
++
++
++def _clp(valor):
++    try:
++        return "$" + f"{int(valor):,}".replace(",", ".")
++    except (TypeError, ValueError):
++        return "$0"
++
++
++def _fecha(valor):
++    return valor.strftime("%d-%m-%Y") if valor else ""
++
++
++def _t(valor):
++    """Texto seguro para ReportLab: escapa XML y reemplaza lo que Helvetica (WinAnsi) no puede dibujar."""
++    texto = "" if valor is None else str(valor)
++    texto = texto.encode("cp1252", "replace").decode("cp1252")
++    return escape(texto).replace("\n", "<br/>")
++
++
++def _estilos():
++    base = getSampleStyleSheet()["Normal"]
++    return {
++        "n": ParagraphStyle("n", parent=base, fontName="Helvetica", fontSize=9.5, leading=13),
++        "peq": ParagraphStyle("peq", parent=base, fontName="Helvetica", fontSize=8.5, leading=11, textColor=GRIS),
++        "h1": ParagraphStyle("h1", parent=base, fontName="Helvetica-Bold", fontSize=18, leading=22, textColor=AZUL),
++        "h3": ParagraphStyle("h3", parent=base, fontName="Helvetica-Bold", fontSize=10.5, leading=14, textColor=AZUL),
++        "der": ParagraphStyle("der", parent=base, fontName="Helvetica", fontSize=9.5, leading=13, alignment=TA_RIGHT),
++        "th": ParagraphStyle("th", parent=base, fontName="Helvetica-Bold", fontSize=9, leading=12, textColor=colors.white),
++        "thd": ParagraphStyle("thd", parent=base, fontName="Helvetica-Bold", fontSize=9, leading=12,
++                              textColor=colors.white, alignment=TA_RIGHT),
++    }
++
++
++def _pie(canvas, doc):
++    canvas.saveState()
++    canvas.setFont("Helvetica", 8)
++    canvas.setFillColor(GRIS)
++    canvas.drawString(doc.leftMargin, 10 * mm, doc.titulo_pie)
++    canvas.drawRightString(A4[0] - doc.rightMargin, 10 * mm, f"Página {canvas.getPageNumber()}")
++    canvas.restoreState()
++
++
++def generar_pdf(cot, empresa=None, iva_porcentaje=None):
++    """Devuelve los bytes del PDF de la cotización `cot` (con sus líneas y solicitud ya cargadas)."""
++    if empresa is None or iva_porcentaje is None:
++        from django.conf import settings
++
++        empresa = empresa if empresa is not None else settings.EMPRESA
++        iva_porcentaje = iva_porcentaje if iva_porcentaje is not None else settings.IVA_PORCENTAJE
++    e = _estilos()
++    sol = cot.solicitud
++    historia = []
++
++    # Encabezado: empresa a la izquierda, código y estado a la derecha.
++    izq = [Paragraph(_t(empresa["nombre"]), e["h3"]), Paragraph(_t(empresa.get("eslogan", "")), e["peq"]),
++           Paragraph(_t(" · ".join(x for x in (empresa.get("email"), empresa.get("telefono")) if x)), e["peq"]),
++           Paragraph(_t(empresa.get("direccion", "")), e["peq"])]
++    der = [Paragraph(f"Cotización {_t(cot.codigo)}", ParagraphStyle("h1d", parent=e["h1"], alignment=TA_RIGHT)),
++           Paragraph(f"Emitida el {_fecha(cot.creada)}", e["der"]),
++           Paragraph(f"Estado: {_t(cot.get_estado_display())}", e["der"])]
++    cab = Table([[izq, der]], colWidths=[85 * mm, 85 * mm])
++    cab.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
++                             ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("LINEBELOW", (0, 0), (-1, 0), 1, AZUL),
++                             ("BOTTOMPADDING", (0, 0), (-1, 0), 8)]))
++    historia += [cab, Spacer(1, 6 * mm)]
++
++    # Datos de la solicitud.
++    lugar = ", ".join(x for x in (sol.direccion, sol.comuna) if x)
++    filas = [("Cliente", sol.nombre_contacto), ("Solicitud", f"{sol.codigo} · {sol.asunto}"), ("Lugar", lugar)]
++    if cot.validez_hasta:
++        filas.append(("Válida hasta", _fecha(cot.validez_hasta)))
++    datos = Table([[Paragraph(f"<b>{_t(k)}</b>", e["n"]), Paragraph(_t(v), e["n"])] for k, v in filas],
++                  colWidths=[30 * mm, 140 * mm])
++    datos.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BACKGROUND", (0, 0), (-1, -1), FONDO),
++                               ("LEFTPADDING", (0, 0), (-1, -1), 6), ("TOPPADDING", (0, 0), (-1, -1), 3),
++                               ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
++    historia += [datos, Spacer(1, 6 * mm)]
++
++    # Detalle: la fila de títulos se repite si la tabla pasa a otra página.
++    filas = [[Paragraph("Descripción", e["th"]), Paragraph("Cant.", e["thd"]),
++              Paragraph("P. unitario", e["thd"]), Paragraph("Subtotal", e["thd"])]]
++    for l in cot.lineas.all():
++        filas.append([Paragraph(_t(l.descripcion), e["n"]), Paragraph(str(l.cantidad), e["der"]),
++                      Paragraph(_clp(l.precio_unitario), e["der"]), Paragraph(_clp(l.subtotal), e["der"])])
++    detalle = Table(filas, colWidths=[88 * mm, 18 * mm, 30 * mm, 34 * mm], repeatRows=1)
++    detalle.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), AZUL), ("VALIGN", (0, 0), (-1, -1), "TOP"),
++                                 ("LINEBELOW", (0, 1), (-1, -1), 0.5, LINEA), ("TOPPADDING", (0, 0), (-1, -1), 4),
++                                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
++    historia += [detalle, Spacer(1, 4 * mm)]
++
++    # Totales (alineados a la derecha, no se parten entre páginas).
++    totales = Table(
++        [[Paragraph("Neto", e["der"]), Paragraph(_clp(cot.neto), e["der"])],
++         [Paragraph(f"IVA ({iva_porcentaje}%)", e["der"]), Paragraph(_clp(cot.iva), e["der"])],
++         [Paragraph("<b>Total</b>", e["der"]), Paragraph(f"<b>{_clp(cot.total)}</b>", e["der"])]],
++        colWidths=[40 * mm, 34 * mm], hAlign="RIGHT")
++    totales.setStyle(TableStyle([("LINEABOVE", (0, 2), (-1, 2), 1, AZUL), ("BACKGROUND", (0, 2), (-1, 2), FONDO)]))
++    historia.append(totales)
++
++    if cot.observaciones:
++        historia += [Spacer(1, 6 * mm), Paragraph("Observaciones", e["h3"]), Paragraph(_t(cot.observaciones), e["n"])]
++    historia += [Spacer(1, 6 * mm),
++                 Paragraph("Montos en pesos chilenos. Los precios unitarios son netos; el IVA se detalla arriba.", e["peq"])]
++
++    buffer = BytesIO()
++    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm,
++                            bottomMargin=20 * mm, title=f"Cotización {cot.codigo}", author=empresa["nombre"])
++    doc.titulo_pie = f"{empresa['nombre']} · {cot.codigo}"
++    doc.build(historia, onFirstPage=_pie, onLaterPages=_pie)
++    return buffer.getvalue()
+diff -ruN -x __pycache__ -x '*.pyc' orig2/apps/cotizaciones/urls.py Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/apps/cotizaciones/urls.py
+--- a/apps/cotizaciones/urls.py	2026-11-17 01:11:57.800414759 +0000
++++ b/apps/cotizaciones/urls.py	2026-11-17 01:11:57.844390738 +0000
+@@ -6,5 +6,6 @@
+ 
+ urlpatterns = [
+     path("<int:pk>/", views.detalle, name="detalle"),
++    path("<int:pk>/pdf/", views.descargar_pdf, name="pdf"),
+     path("<int:pk>/responder/", views.responder, name="responder"),
+ ]
+diff -ruN -x __pycache__ -x '*.pyc' orig2/apps/cotizaciones/views.py Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/apps/cotizaciones/views.py
+--- a/apps/cotizaciones/views.py	2026-11-17 01:11:57.800424489 +0000
++++ b/apps/cotizaciones/views.py	2026-11-17 01:11:57.844205931 +0000
+@@ -1,4 +1,5 @@
+ from django.contrib import messages
++from django.http import HttpResponse
+ from django.shortcuts import get_object_or_404, redirect, render
+ from django.views.decorators.http import require_POST
+ 
+@@ -7,6 +8,7 @@
+ 
+ from . import services
+ from .models import Cotizacion
++from .pdf import generar_pdf
+ 
+ 
+ @rol_requerido(*TODOS_AUTENTICADOS)
+@@ -19,6 +21,19 @@
+     return render(request, "cotizaciones/detalle.html", {"cot": cot})
+ 
+ 
++@rol_requerido(*TODOS_AUTENTICADOS)
++def descargar_pdf(request, pk):
++    """Descarga la cotización en PDF, generada en el servidor. Mismas reglas de acceso que la vista de detalle."""
++    cot = get_object_or_404(Cotizacion.objects.select_related("solicitud__servicio").prefetch_related("lineas", "solicitud__items"), pk=pk)
++    obtener_solicitud_para(request.user, cot.solicitud_id, request)
++    if request.user.es_cliente and cot.estado == "BORRADOR":
++        return redirect("solicitudes:detalle", pk=cot.solicitud_id)
++    respuesta = HttpResponse(generar_pdf(cot), content_type="application/pdf")
++    respuesta["Content-Disposition"] = f'attachment; filename="{cot.codigo}.pdf"'
++    respuesta["Cache-Control"] = "private, no-store"  # contiene datos personales y montos
++    return respuesta
++
++
+ @require_POST
+ @rol_requerido(*SOLO_CLIENTE)
+ def responder(request, pk):
+diff -ruN -x __pycache__ -x '*.pyc' orig2/requirements.txt Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/requirements.txt
+--- a/requirements.txt	2026-11-17 01:11:57.795438916 +0000
++++ b/requirements.txt	2026-11-17 01:12:12.822073703 +0000
+@@ -5,3 +5,5 @@
+ gunicorn>=22.0
+ Pillow>=10.4
+ argon2-cffi>=23.1
++reportlab>=4.2
++pypdf>=5.0  # solo pruebas: leer el PDF generado
+diff -ruN -x __pycache__ -x '*.pyc' orig2/templates/cotizaciones/detalle.html Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/templates/cotizaciones/detalle.html
+--- a/templates/cotizaciones/detalle.html	2026-11-17 01:11:57.813812939 +0000
++++ b/templates/cotizaciones/detalle.html	2026-11-17 01:11:57.844579748 +0000
+@@ -17,7 +17,8 @@
+     </tfoot></table></div>
+   {% if cot.observaciones %}<div><h3>Observaciones</h3>{{ cot.observaciones|linebreaks }}</div>{% endif %}
+   <div class="row no-print">
+-    <button class="btn ghost" type="button" onclick="window.print()">Imprimir / guardar PDF</button>
++    <a class="btn" href="{% url 'cotizaciones:pdf' cot.pk %}">Descargar PDF</a>
++    <button class="btn ghost" type="button" onclick="window.print()">Imprimir</button>
+     {% if user.es_personal and cot.estado == "BORRADOR" %}
+       <a class="btn secondary" href="{% url 'panel:cotizacion_editar' cot.pk %}">Editar</a>
+       <form method="post" action="{% url 'panel:cotizacion_enviar' cot.pk %}" data-once>{% csrf_token %}<button class="btn" type="submit">Enviar al cliente</button></form>
+diff -ruN -x __pycache__ -x '*.pyc' orig2/tests/test_cotizaciones.py Electorry-SpA-Plataforma-Web-de-Servicios-y-E-commerce/tests/test_cotizaciones.py
+--- a/tests/test_cotizaciones.py	2026-11-17 01:11:57.816446629 +0000
++++ b/tests/test_cotizaciones.py	2026-11-17 01:11:57.845067313 +0000
+@@ -133,6 +133,87 @@
+             self.client.get(reverse("panel:cotizaciones"))
+ 
+ 
++class CotizacionPdfTests(BaseTest):
++    """S4-J2: descarga de la cotización en PDF generada por el servidor."""
++
++    def setUp(self):
++        self.sol = self.crear_solicitud()
++        self.cot = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS, observaciones="Incluye materiales ñandú áéíóú")
++
++    def url(self, cot=None):
++        return reverse("cotizaciones:pdf", args=[(cot or self.cot).pk])
++
++    def enviar(self):
++        services.enviar_cotizacion(self.cot, self.admin)
++
++    def test_cliente_descarga_pdf_valido(self):
++        self.enviar()
++        self.login(self.cliente)
++        r = self.client.get(self.url())
++        self.assertEqual(r.status_code, 200)
++        self.assertEqual(r["Content-Type"], "application/pdf")
++        self.assertTrue(r.content.startswith(b"%PDF-"))
++        self.assertIn(f'filename="{self.cot.codigo}.pdf"', r["Content-Disposition"])
++        self.assertTrue(r["Content-Disposition"].startswith("attachment"))
++        self.assertIn("no-store", r["Cache-Control"])
++
++    def test_el_pdf_trae_los_montos_y_el_codigo(self):
++        from io import BytesIO
++
++        from pypdf import PdfReader
++
++        self.enviar()
++        self.login(self.cliente)
++        texto = "".join(p.extract_text() for p in PdfReader(BytesIO(self.client.get(self.url()).content)).pages)
++        for esperado in (self.cot.codigo, "Tablero", "Mano de obra", "$200.000", "$38.000", "$238.000"):
++            self.assertIn(esperado, texto)
++
++    def test_personal_puede_descargar_borrador(self):
++        self.login(self.interno)
++        self.assertEqual(self.client.get(self.url()).status_code, 200)
++
++    def test_cliente_no_descarga_borradores(self):
++        self.login(self.cliente)
++        r = self.client.get(self.url())
++        self.assertEqual(r.status_code, 302)
++        self.assertNotEqual(r.get("Content-Type"), "application/pdf")
++
++    def test_cliente_ajeno_no_descarga(self):
++        self.enviar()
++        self.login(self.cliente2)
++        self.assertEqual(self.client.get(self.url()).status_code, 404)
++
++    def test_anonimo_va_al_login(self):
++        self.enviar()
++        r = self.client.get(self.url())
++        self.assertEqual(r.status_code, 302)
++        self.assertIn(reverse("usuarios:login"), r.url)
++
++    def test_texto_con_caracteres_especiales_no_rompe_el_pdf(self):
++        from apps.cotizaciones.models import LineaCotizacion
++
++        LineaCotizacion.objects.create(cotizacion=self.cot, descripcion="<b>Ñandú</b> & \"cable\" → 12mm² 🔌 " + "largo " * 80, cantidad=1, precio_unitario=1000)
++        self.login(self.admin)
++        r = self.client.get(self.url())
++        self.assertTrue(r.content.startswith(b"%PDF-"))
++
++    def test_muchas_lineas_paginan(self):
++        from io import BytesIO
++
++        from pypdf import PdfReader
++
++        from apps.cotizaciones.models import LineaCotizacion
++
++        LineaCotizacion.objects.bulk_create([LineaCotizacion(cotizacion=self.cot, descripcion=f"Ítem {i}", cantidad=1, precio_unitario=1000) for i in range(80)])
++        self.login(self.admin)
++        self.assertGreater(len(PdfReader(BytesIO(self.client.get(self.url()).content)).pages), 1)
++
++    def test_detalle_ofrece_el_boton(self):
++        self.enviar()
++        self.login(self.cliente)
++        self.assertContains(self.client.get(reverse("cotizaciones:detalle", args=[self.cot.pk])), self.url())
++
++
+ class CotizacionDeProductosTests(BaseTest):
+     """S3-R1: la cotización parte de los productos que pidió el cliente."""
+ 

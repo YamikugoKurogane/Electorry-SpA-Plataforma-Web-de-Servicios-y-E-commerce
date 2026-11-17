@@ -133,6 +133,87 @@ class CotizacionTests(BaseTest):
             self.client.get(reverse("panel:cotizaciones"))
 
 
+class CotizacionPdfTests(BaseTest):
+    """S4-J2: descarga de la cotización en PDF generada por el servidor."""
+
+    def setUp(self):
+        self.sol = self.crear_solicitud()
+        self.cot = services.crear_cotizacion(solicitud=self.sol, usuario=self.admin, lineas=LINEAS, observaciones="Incluye materiales ñandú áéíóú")
+
+    def url(self, cot=None):
+        return reverse("cotizaciones:pdf", args=[(cot or self.cot).pk])
+
+    def enviar(self):
+        services.enviar_cotizacion(self.cot, self.admin)
+
+    def test_cliente_descarga_pdf_valido(self):
+        self.enviar()
+        self.login(self.cliente)
+        r = self.client.get(self.url())
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/pdf")
+        self.assertTrue(r.content.startswith(b"%PDF-"))
+        self.assertIn(f'filename="{self.cot.codigo}.pdf"', r["Content-Disposition"])
+        self.assertTrue(r["Content-Disposition"].startswith("attachment"))
+        self.assertIn("no-store", r["Cache-Control"])
+
+    def test_el_pdf_trae_los_montos_y_el_codigo(self):
+        from io import BytesIO
+
+        from pypdf import PdfReader
+
+        self.enviar()
+        self.login(self.cliente)
+        texto = "".join(p.extract_text() for p in PdfReader(BytesIO(self.client.get(self.url()).content)).pages)
+        for esperado in (self.cot.codigo, "Tablero", "Mano de obra", "$200.000", "$38.000", "$238.000"):
+            self.assertIn(esperado, texto)
+
+    def test_personal_puede_descargar_borrador(self):
+        self.login(self.interno)
+        self.assertEqual(self.client.get(self.url()).status_code, 200)
+
+    def test_cliente_no_descarga_borradores(self):
+        self.login(self.cliente)
+        r = self.client.get(self.url())
+        self.assertEqual(r.status_code, 302)
+        self.assertNotEqual(r.get("Content-Type"), "application/pdf")
+
+    def test_cliente_ajeno_no_descarga(self):
+        self.enviar()
+        self.login(self.cliente2)
+        self.assertEqual(self.client.get(self.url()).status_code, 404)
+
+    def test_anonimo_va_al_login(self):
+        self.enviar()
+        r = self.client.get(self.url())
+        self.assertEqual(r.status_code, 302)
+        self.assertIn(reverse("usuarios:login"), r.url)
+
+    def test_texto_con_caracteres_especiales_no_rompe_el_pdf(self):
+        from apps.cotizaciones.models import LineaCotizacion
+
+        LineaCotizacion.objects.create(cotizacion=self.cot, descripcion="<b>Ñandú</b> & \"cable\" → 12mm² 🔌 " + "largo " * 80, cantidad=1, precio_unitario=1000)
+        self.login(self.admin)
+        r = self.client.get(self.url())
+        self.assertTrue(r.content.startswith(b"%PDF-"))
+
+    def test_muchas_lineas_paginan(self):
+        from io import BytesIO
+
+        from pypdf import PdfReader
+
+        from apps.cotizaciones.models import LineaCotizacion
+
+        LineaCotizacion.objects.bulk_create([LineaCotizacion(cotizacion=self.cot, descripcion=f"Ítem {i}", cantidad=1, precio_unitario=1000) for i in range(80)])
+        self.login(self.admin)
+        self.assertGreater(len(PdfReader(BytesIO(self.client.get(self.url()).content)).pages), 1)
+
+    def test_detalle_ofrece_el_boton(self):
+        self.enviar()
+        self.login(self.cliente)
+        self.assertContains(self.client.get(reverse("cotizaciones:detalle", args=[self.cot.pk])), self.url())
+
+
 class CotizacionDeProductosTests(BaseTest):
     """S3-R1: la cotización parte de los productos que pidió el cliente."""
 
