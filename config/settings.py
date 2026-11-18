@@ -56,7 +56,7 @@ if not SECRET_KEY:
             "Falta DJANGO_SECRET_KEY. Defínela como variable de entorno (RNF-SEG-08)."
         )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,electorryspa.onrender.com,.onrender.com" if DEBUG else "")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,electorryspa.onrender.com,.onrender.com" if DEBUG else "*")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 INSTALLED_APPS = [
