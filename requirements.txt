@@ -7,3 +7,4 @@ Pillow>=10.4
 argon2-cffi>=23.1
 reportlab>=4.2
 pypdf>=5.0  # solo pruebas: leer el PDF generado
+whitenoise
