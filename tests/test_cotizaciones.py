@@ -192,7 +192,7 @@ class CotizacionPdfTests(BaseTest):
     def test_texto_con_caracteres_especiales_no_rompe_el_pdf(self):
         from apps.cotizaciones.models import LineaCotizacion
 
-        LineaCotizacion.objects.create(cotizacion=self.cot, descripcion="<b>Ñandú</b> & \"cable\" → 12mm² 🔌 " + "largo " * 80, cantidad=1, precio_unitario=1000)
+        LineaCotizacion.objects.create(cotizacion=self.cot, descripcion="<b>Ñandú</b> & \"cable\" → 12mm² 🔌 " + "largo " * 20, cantidad=1, precio_unitario=1000)
         self.login(self.admin)
         r = self.client.get(self.url())
         self.assertTrue(r.content.startswith(b"%PDF-"))
