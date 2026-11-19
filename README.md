@@ -1,5 +1,7 @@
 # Electorry SpA — Plataforma Web de Servicios y E-commerce
 
+Electorry SpA es una plataforma web de servicios y e-commerce dirigida a empresas de servicios eléctricos y sus clientes. Resuelve el problema de la gestión manual de solicitudes y cotizaciones, digitalizando todo el ciclo de vida del pedido: desde que el cliente solicita un servicio, recibe una cotización, paga en línea y recibe su comprobante, todo con trazabilidad completa y sin pérdida de información.
+
 Reconstrucción desde cero según el **ATAM v2.0**: monolito modular en capas con **Django 5 + PostgreSQL**,
 autenticación por sesión con roles, adaptador de pagos, correo tolerante a fallas y despliegue reproducible.
 
@@ -36,7 +38,7 @@ python manage.py runserver
 ```
 Con PostgreSQL: define `DATABASE_URL=postgres://usuario:clave@localhost:5432/electorry`.
 
-Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (278 pruebas; algunas se omiten según el motor de base de datos).
+Pruebas: `DJANGO_TESTING=1 python manage.py test tests` (287 pruebas; algunas se omiten según el motor de base de datos).
 
 ## Base de datos en desarrollo (PostgreSQL)
 
