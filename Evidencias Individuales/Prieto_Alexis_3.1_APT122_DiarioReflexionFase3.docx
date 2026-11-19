@@ -1,0 +1,6 @@
+During the development of the Electorry SpA project, I focused on infrastructure, security, and deployment. 
+My main contribution was configuring the Staging environment with Docker, Nginx, and PostgreSQL, ensuring the system 
+was resilient with healthchecks and restart policies. I also implemented the payment gateway adapter for Mercado Pago, 
+which allowed the team to continue testing despite an external provider error (DXT40). 
+This experience taught me the importance of designing fault-tolerant architectures and documenting deployment decisions. 
+I feel more prepared to face real-world challenges in cloud infrastructure and security.
