@@ -147,3 +147,14 @@ Ver `.env.example`. Obligatoria en producción: `DJANGO_SECRET_KEY` (la app no a
 ## Documentación
 - `docs/TRAZABILIDAD.md` — RF / RNF / HU / escenarios → código y pruebas.
 - `docs/DECISIONES.md` — decisiones D1–D8 y supuestos.
+
+## Integrantes y Roles
+* **Alexis Prieto** - Scrum Master e Infraestructura (Docker, CI/CD, Seguridad, Git).
+* **Rodrigo Guajardo** - Product Owner y Backend (Base de Datos PostgreSQL, Lógica de Negocio, Respaldos).
+* **José Martínez** - QA y Frontend (Pruebas Unitarias, Accesibilidad, Generación de PDF).
+
+## Metodología de Trabajo
+Utilizamos el marco de trabajo **Scrum**, con Sprints de 15 días. 
+* **Herramientas:** Trello para la gestión del tablero Kanban y GitHub para el control de versiones.
+* **Ceremonias:** Daily Scrums diarios, Sprint Planning y Sprint Review al final de cada iteración.
+* **Calidad:** El código se congela al final del Sprint y se valida con una suite de más de 287 pruebas automatizadas antes de pasar a `main`.
